@@ -1,0 +1,70 @@
+cc_library_shared {
+
+    name: "ese_spi_st",
+    defaults: ["hidl_defaults"],
+    proprietary: true,
+
+    srcs: [
+        "ese-spi-driver/SpiLayerDriver.cc",
+        "ese-spi-driver/SpiLayerInterface.cc",
+        "ese-spi-driver/SpiLayerComm.cc",
+        "ese-spi-driver/StEseApi.cc",
+        "ese-spi-driver/T1protocol.cc",
+        "ese-spi-driver/utils-lib/Atp.cc",
+        "ese-spi-driver/utils-lib/Iso13239CRC.cc",
+        "ese-spi-driver/utils-lib/Tpdu.cc",
+        "ese-spi-driver/utils-lib/Utils.cc",
+        "ese-spi-driver/utils-lib/ese_config.cpp",
+        "ese-spi-driver/utils-lib/config.cpp",
+        "ese-spi-driver/utils-lib/android_logmsg.cpp",
+
+    ],
+
+    local_include_dirs: [
+        "ese-spi-driver/",
+        "ese-spi-driver/utils-lib",
+    ],
+    cflags: [
+        "-DANDROID",
+        "-DBUILDCFG=1",
+        "-Wall",
+        "-Werror",
+    ],
+
+    shared_libs: [
+        "android.hardware.secure_element@1.0",
+        "libcutils",
+        "libhardware",
+        "libhidlbase",
+        "libhidltransport",
+        "libutils",
+        "liblog",
+        "libbase",
+    ],
+}
+
+
+cc_binary {
+    name: "android.hardware.secure_element@1.0-service.st",
+    relative_install_path: "hw",
+    init_rc: ["1.0/android.hardware.secure_element@1.0-service.st.rc"],
+    proprietary: true,
+    defaults: ["hidl_defaults"],
+    srcs: [
+        "1.0/StEseService.cpp",
+        "1.0/SecureElement.cpp",
+    ],
+
+    shared_libs: [
+        "android.hardware.secure_element@1.0",
+        "ese_spi_st",
+        "libbase",
+        "libcutils",
+        "libhardware",
+        "libhidlbase",
+        "libhidltransport",
+        "libhwbinder",
+        "liblog",
+        "libutils",
+    ],
+}
