@@ -20,11 +20,11 @@
 #define SPILAYERDRIVER_H_
 
 #include <fcntl.h>
+#include <linux/spi/spidev.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include "/usr/include/linux/spi/spidev.h"
 
 //#define ATP_FILE_PATH     "/data/vendor/ese/atp.bin"
 #define ATP_FILE_PATH "/data/atp.bin"
