@@ -14,10 +14,9 @@ cc_library_shared {
         "ese-spi-driver/utils-lib/Iso13239CRC.cc",
         "ese-spi-driver/utils-lib/Tpdu.cc",
         "ese-spi-driver/utils-lib/Utils.cc",
-        "ese-spi-driver/utils-lib/ese_config.cpp",
-        "ese-spi-driver/utils-lib/config.cpp",
-        "ese-spi-driver/utils-lib/android_logmsg.cpp",
-
+        "ese-spi-driver/utils-lib/ese_config.cc",
+        "ese-spi-driver/utils-lib/config.cc",
+        "ese-spi-driver/utils-lib/android_logmsg.cc",
     ],
 
     local_include_dirs: [
