@@ -83,7 +83,7 @@ void SpiLayerDriver_close() {
 **                  failed.
 **
 *******************************************************************************/
-int SpiLayerDriver_read(char* rxBuffer, unsigned int bytesToRead) {
+int SpiLayerDriver_read(uint8_t* rxBuffer, unsigned int bytesToRead) {
   if (currentMode != MODE_RX) {
     currentMode = MODE_RX;
     STLOG_HAL_V(" Last TX: %ld,%ld", lastRxTxTime.tv_sec, lastRxTxTime.tv_usec);
@@ -121,7 +121,7 @@ int SpiLayerDriver_read(char* rxBuffer, unsigned int bytesToRead) {
 **                  failed.
 **
 *******************************************************************************/
-int SpiLayerDriver_write(char* txBuffer, unsigned int txBufferLength) {
+int SpiLayerDriver_write(uint8_t* txBuffer, unsigned int txBufferLength) {
   if (currentMode != MODE_TX) {
     currentMode = MODE_TX;
     STLOG_HAL_V(" Last RX: %ld,%ld", lastRxTxTime.tv_sec, lastRxTxTime.tv_usec);
@@ -137,9 +137,9 @@ int SpiLayerDriver_write(char* txBuffer, unsigned int txBufferLength) {
     gettimeofday(&currentTime, 0);
     STLOG_HAL_V("Start TX: %ld,%ld", currentTime.tv_sec, currentTime.tv_usec);
   }
-  char hexString[txBufferLength * 3];
-  Utils_charArrayToHexString(txBuffer, txBufferLength, hexString);
-  STLOG_HAL_D("SpiLayerDriver_write: spiTx > %s", hexString);
+
+  DispHal("Tx", txBuffer, txBufferLength);
+
   int rc = write(spiDeviceId, txBuffer, txBufferLength);
   gettimeofday(&lastRxTxTime, 0);
   return rc;

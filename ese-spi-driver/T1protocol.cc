@@ -51,17 +51,17 @@ uint8_t IFSD;
 ** Returns          pcb          - Computed PCB.
 **
 *******************************************************************************/
-char T1protocol_getValidPcb(TpduType type, RBlockType subtype,
-                            uint8_t numSeqMaster, uint8_t numseqSlave,
-                            bool isLast) {
-  char pcb = 0xFF;
+uint8_t T1protocol_getValidPcb(TpduType type, RBlockType subtype,
+                               uint8_t numSeqMaster, uint8_t numseqSlave,
+                               bool isLast) {
+  uint8_t pcb = 0xFF;
 
   switch (type) {
     case IBlock:
       pcb = 0x00;
       // Set the Ns according to the numSeqMaster
       if (numSeqMaster == 1) {
-        pcb |= (char)IBLOCK_NS_BIT_MASK;
+        pcb |= (uint8_t)IBLOCK_NS_BIT_MASK;
       }
 
       // If the Tpdu is a part of chain, set the M bit inside the pcb.
@@ -74,15 +74,15 @@ char T1protocol_getValidPcb(TpduType type, RBlockType subtype,
       pcb = 0x80;
       if (subtype == ErrorFree) {
         // Set the bit for the N(R)
-        pcb |= (char)((uint8_t)numseqSlave) << 4;
+        pcb |= ((uint8_t)numseqSlave) << 4;
       } else if (subtype == ChecksumError) {
         // Set the bits for the subtype checksum error and the N(R)
         pcb |= 0b00000001;
-        pcb |= (char)((uint8_t)numseqSlave) << 4;
+        pcb |= ((uint8_t)numseqSlave) << 4;
       } else if (subtype == OtherErrors) {
         // Set the bits for the subtype other errors and the N(R)
         pcb |= 0b00000010;
-        pcb |= (char)((uint8_t)numseqSlave) << 4;
+        pcb |= ((uint8_t)numseqSlave) << 4;
       }
       break;
 
@@ -107,7 +107,7 @@ char T1protocol_getValidPcb(TpduType type, RBlockType subtype,
 int T1protocol_checkResponseTpduChecksum(Tpdu* respTpdu) {
   if (ATP.checksumType == CRC) {
     // Check CRC
-    char arrayTpdu[TPDU_PROLOGUE_LENGTH + respTpdu->len + TPDU_CRC_LENGTH];
+    uint8_t arrayTpdu[TPDU_PROLOGUE_LENGTH + respTpdu->len + TPDU_CRC_LENGTH];
     Tpdu_toByteArray(respTpdu, arrayTpdu);
     if (computeCrc(arrayTpdu, TPDU_PROLOGUE_LENGTH + respTpdu->len) !=
         respTpdu->checksum) {
@@ -205,17 +205,17 @@ int T1protocol_checkResponseLenConsistency(Tpdu* tpdu) {
       // If the last Tpdu received was an SBlock WTX... or IFS..., the length
       // must be 1. If the last Tpdu received was an SBlock
       // ABORT... or RESYNCH... the length must be 0.
-      if ((tpdu->pcb == (char)SBLOCK_WTX_REQUEST_MASK) ||
-          (tpdu->pcb == (char)SBLOCK_WTX_RESPONSE_MASK) ||
-          (tpdu->pcb == (char)SBLOCK_IFS_REQUEST_MASK) ||
-          (tpdu->pcb == (char)SBLOCK_IFS_RESPONSE_MASK)) {
+      if ((tpdu->pcb == (uint8_t)SBLOCK_WTX_REQUEST_MASK) ||
+          (tpdu->pcb == (uint8_t)SBLOCK_WTX_RESPONSE_MASK) ||
+          (tpdu->pcb == (uint8_t)SBLOCK_IFS_REQUEST_MASK) ||
+          (tpdu->pcb == (uint8_t)SBLOCK_IFS_RESPONSE_MASK)) {
         if (tpdu->len != 1) {
           return -1;
         }
-      } else if ((tpdu->pcb == (char)SBLOCK_ABORT_REQUEST_MASK) ||
-                 (tpdu->pcb == (char)SBLOCK_ABORT_RESPONSE_MASK) ||
-                 (tpdu->pcb == (char)SBLOCK_RESYNCH_REQUEST_MASK) ||
-                 (tpdu->pcb == (char)SBLOCK_RESYNCH_RESPONSE_MASK)) {
+      } else if ((tpdu->pcb == (uint8_t)SBLOCK_ABORT_REQUEST_MASK) ||
+                 (tpdu->pcb == (uint8_t)SBLOCK_ABORT_RESPONSE_MASK) ||
+                 (tpdu->pcb == (uint8_t)SBLOCK_RESYNCH_REQUEST_MASK) ||
+                 (tpdu->pcb == (uint8_t)SBLOCK_RESYNCH_RESPONSE_MASK)) {
         if (tpdu->len != 0) {
           return -1;
         }
@@ -295,12 +295,12 @@ int T1protocol_checkSBlockResponseConsistency(Tpdu* lastCmdTpduSent,
   // Check if last Tpdu received was an SBlock(...response) after having
   // transmitted a SBlock(...request).
 
-  if ((lastCmdTpduSent->pcb == (char)SBLOCK_WTX_REQUEST_MASK) ||
-      (lastCmdTpduSent->pcb == (char)SBLOCK_ABORT_REQUEST_MASK) ||
-      (lastCmdTpduSent->pcb == (char)SBLOCK_IFS_REQUEST_MASK) ||
-      (lastCmdTpduSent->pcb == (char)SBLOCK_RESYNCH_REQUEST_MASK) ||
-      (lastCmdTpduSent->pcb == (char)SBLOCK_SWRESET_REQUEST_MASK)) {
-    char expectedPcbResponse;
+  if ((lastCmdTpduSent->pcb == (uint8_t)SBLOCK_WTX_REQUEST_MASK) ||
+      (lastCmdTpduSent->pcb == (uint8_t)SBLOCK_ABORT_REQUEST_MASK) ||
+      (lastCmdTpduSent->pcb == (uint8_t)SBLOCK_IFS_REQUEST_MASK) ||
+      (lastCmdTpduSent->pcb == (uint8_t)SBLOCK_RESYNCH_REQUEST_MASK) ||
+      (lastCmdTpduSent->pcb == (uint8_t)SBLOCK_SWRESET_REQUEST_MASK)) {
+    uint8_t expectedPcbResponse;
     // Calculate the expected response according to the SBlock request
     // previously sent.
     expectedPcbResponse = lastCmdTpduSent->pcb | 0b00100000;
@@ -517,7 +517,7 @@ int T1protocol_formSblockResponse(Tpdu* responseTpdu, Tpdu* requestTpdu) {
   responseTpdu->checksum = 0x0000;
 
   if (ATP.checksumType == CRC) {
-    char buffer[TPDU_PROLOGUE_LENGTH + responseTpdu->len + TPDU_CRC_LENGTH];
+    uint8_t buffer[TPDU_PROLOGUE_LENGTH + responseTpdu->len + TPDU_CRC_LENGTH];
     Tpdu_toByteArray(responseTpdu, buffer);
     responseTpdu->checksum =
         computeCrc(buffer, (TPDU_PROLOGUE_LENGTH + responseTpdu->len));
@@ -552,7 +552,7 @@ int T1protocol_formSblockResponse(Tpdu* responseTpdu, Tpdu* requestTpdu) {
 int T1protocol_processSBlock(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
                              Tpdu* lastRespTpduReceived, int* bytesRead) {
   int rc;
-  if (lastRespTpduReceived->pcb == (char)SBLOCK_WTX_REQUEST_MASK) {
+  if (lastRespTpduReceived->pcb == (uint8_t)SBLOCK_WTX_REQUEST_MASK) {
     T1protocol_formSblockResponse(lastCmdTpduSent, lastRespTpduReceived);
     rc = SpiLayerInterface_transcieveTpdu(
         lastCmdTpduSent, lastRespTpduReceived,
@@ -562,7 +562,7 @@ int T1protocol_processSBlock(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
     }
     *bytesRead = rc;
     return 1;
-  } else if (lastRespTpduReceived->pcb == (char)SBLOCK_IFS_REQUEST_MASK) {
+  } else if (lastRespTpduReceived->pcb == (uint8_t)SBLOCK_IFS_REQUEST_MASK) {
     ATP.ifsc = (uint8_t)lastRespTpduReceived->data[0];
     T1protocol_formSblockResponse(lastCmdTpduSent, lastRespTpduReceived);
     rc = SpiLayerInterface_transcieveTpdu(lastCmdTpduSent, lastRespTpduReceived,
@@ -572,7 +572,7 @@ int T1protocol_processSBlock(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
     }
     *bytesRead = rc;
     return 1;
-  } else if (lastRespTpduReceived->pcb == (char)SBLOCK_RESYNCH_REQUEST_MASK) {
+  } else if (lastRespTpduReceived->pcb == (uint8_t)SBLOCK_RESYNCH_REQUEST_MASK) {
     T1protocol_resetSequenceNumbers();
     T1protocol_formSblockResponse(lastCmdTpduSent, lastRespTpduReceived);
     rc = SpiLayerInterface_transcieveTpdu(lastCmdTpduSent, lastRespTpduReceived,
@@ -582,7 +582,8 @@ int T1protocol_processSBlock(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
     }
     *bytesRead = rc;
     return 1;
-  } else if (lastRespTpduReceived->pcb == (char)SBLOCK_RESYNCH_RESPONSE_MASK) {
+  } else if (lastRespTpduReceived->pcb ==
+             (uint8_t)SBLOCK_RESYNCH_RESPONSE_MASK) {
     T1protocol_resetSequenceNumbers();
     // Reset the sequence number of the original Tpdu if needed
     if ((originalCmdTpdu->pcb & IBLOCK_NS_BIT_MASK) > 0) {
@@ -603,11 +604,12 @@ int T1protocol_processSBlock(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
     }
     *bytesRead = rc;
     return 1;
-  } else if (lastRespTpduReceived->pcb == (char)SBLOCK_ABORT_REQUEST_MASK) {
+  } else if (lastRespTpduReceived->pcb == (uint8_t)SBLOCK_ABORT_REQUEST_MASK) {
     // TODO
     STLOG_HAL_E("ABORT request received still not supported.");
     return -1;
-  } else if (lastRespTpduReceived->pcb == (char)SBLOCK_SWRESET_RESPONSE_MASK) {
+  } else if (lastRespTpduReceived->pcb ==
+             (uint8_t)SBLOCK_SWRESET_RESPONSE_MASK) {
     if (Atp_setAtp(lastRespTpduReceived->data) != 0) {
       STLOG_HAL_E("Error setting ATP");
       return -1;
@@ -743,7 +745,7 @@ void T1protocol_updateRecoveryStatus() {
 ** Returns          The amount of data bytes saved into the apdu buffer.
 **
 *******************************************************************************/
-uint8_t T1protocol_setRespApduData(Tpdu* respTpdu, char** respApduBuffer) {
+uint8_t T1protocol_setRespApduData(Tpdu* respTpdu, uint8_t** respApduBuffer) {
   uint8_t i;
   STLOG_HAL_D("%s : Enter", __func__);
 
@@ -1022,7 +1024,7 @@ int T1protocol_handleTpduResponse(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
 ** Returns          0 if everything went fine, -1 if something failed.
 **
 *******************************************************************************/
-int T1protocol_formCommandTpduToSend(char* cmdApduPart, uint8_t cmdLength,
+int T1protocol_formCommandTpduToSend(uint8_t* cmdApduPart, uint8_t cmdLength,
                                      bool isLast, Tpdu* cmdTpdu) {
   STLOG_HAL_D("%s : Enter ", __func__);
   if (cmdLength == 0) {
@@ -1090,8 +1092,8 @@ int T1protocol_init(SpiDriver_config_t* tSpiDriver) {
 ** Returns          0 if everything went fine, -1 if something failed.
 **
 *******************************************************************************/
-int T1protocol_transcieveApduPart(char* cmdApduPart, uint8_t cmdLength,
-                                  bool isLast, char* respApduPart,
+int T1protocol_transcieveApduPart(uint8_t* cmdApduPart, uint8_t cmdLength,
+                                  bool isLast, uint8_t* respApduPart,
                                   uint8_t* respLength) {
   Tpdu originalCmdTpdu, lastCmdTpduSent, lastRespTpduReceived;
   STLOG_HAL_D("%s : Enter", __func__);
