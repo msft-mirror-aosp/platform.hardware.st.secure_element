@@ -72,7 +72,7 @@ int Tpdu_toByteArray(Tpdu* structTpdu, char* baTpdu);
  *
  * @return true if checksum is ok, false otherwise.
  */
-bool Tpdu_isChecksumOk(Tpdu* tpdu);
+bool Tpdu_isChecksumOk(Tpdu *tpdu);
 
 /**
  * Forms a TPDU with the specified fields.
@@ -113,7 +113,7 @@ uint16_t Tpdu_getChecksumValue(char* array, int checksumStartPosition,
  *
  * @return The TPDU type of the tpdu.
  */
-TpduType Tpdu_getType(Tpdu* tpdu);
+TpduType Tpdu_getType(Tpdu *tpdu);
 
 /**
  * Converts a TPDU into a hex string.
