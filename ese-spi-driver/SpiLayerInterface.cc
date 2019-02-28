@@ -48,7 +48,10 @@ int SpiLayerInterface_init(SpiDriver_config_t* tSpiDriver) {
 
   // Configure the SPI before start the data exchange with the eSE
   char* spiDevPath = tSpiDriver->pDevName;
-  if (SpiLayerDriver_open(spiDevPath) != 0) {
+
+  int DevHandle = SpiLayerDriver_open(spiDevPath);
+  tSpiDriver->pDevHandle = (void*)((intptr_t)DevHandle);
+  if (DevHandle == -1) {
     // Error configuring the SPI bus
     STLOG_HAL_E("Error configuring the SPI bus.");
     return -1;
