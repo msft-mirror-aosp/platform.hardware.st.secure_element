@@ -21,7 +21,7 @@
 
 //************************************ Includes ********************************
 #include <stdint.h>
-
+#include <string.h>
 //************************************ Defines *********************************
 
 #define ATP_MAX_ALLOWED_LENGTH 38
@@ -86,5 +86,13 @@ uint16_t Atp_getChecksumValue(uint8_t *array, int checksumStartPosition);
  * @return 0 If everything is Ok, -1 otherwise.
  */
 int Atp_setAtp(uint8_t *baAtp);
+
+/**
+ * Gets the ATP stored
+ *
+ *
+ * @return pointer to the ATP array.
+ */
+uint8_t *Atp_getAtp();
 
 #endif /* ATP_H_ */
