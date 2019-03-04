@@ -69,7 +69,7 @@ int SpiLayerComm_waitForAtpLength() {
   // Check if ATP length read is OK
   if ((spiLecture == (char)0x00) || (spiLecture == (char)0xFF)) {
     STLOG_HAL_E("Invalid ATP length read");
-    return -2;
+    return -1;
   }
 
   ATP.len = spiLecture;
@@ -151,22 +151,25 @@ int SpiLayerComm_readAtp() {
 *******************************************************************************/
 void SpiLayerComm_readAtpFromFile() {
   STLOG_HAL_D("%s : Enter ", __func__);
+
   FILE* atp_file = fopen(ATP_FILE_PATH, "rb");
-  struct stat st;
+  if (atp_file) {
+    struct stat st;
 
-  if (stat(ATP_FILE_PATH, &st) < 0) {
-    STLOG_HAL_E("Error reading ATP file.");
+    if (stat(ATP_FILE_PATH, &st) < 0) {
+      STLOG_HAL_E("Error reading ATP file.");
+    }
+
+    char atpArray[st.st_size];
+    fread(atpArray, st.st_size, 1, atp_file);
+    // Check if error occurs
+    if (ferror(atp_file)) {
+      STLOG_HAL_E("An error occurred.");
+    }
+
+    // Set-up the ATP into the corresponding struct
+    Atp_setAtp(atpArray);
   }
-
-  char atpArray[st.st_size];
-  fread(atpArray, st.st_size, 1, atp_file);
-  // Check if error occurs
-  if (ferror(atp_file)) {
-    STLOG_HAL_E("An error occurred.");
-  }
-
-  // Set-up the ATP into the corresponding struct
-  Atp_setAtp(atpArray);
 }
 
 /*******************************************************************************
@@ -247,12 +250,7 @@ int SpiLayerComm_waitForResponse(Tpdu* respTpdu, int nBwt) {
   // Start the polling mechanism
   while (true) {
     // Wait between each polling sequence
-    // nanosleep(pollInterval);
-    // nanosleep((const struct timespec[]){{0, 5000}}, NULL);
     usleep(1000);
-    // pollInterval = 1;
-    // ms_sleep(pollInterval);
-
     // Read the slave response by sending three null bytes
     if (SpiLayerDriver_read(&pollingRxByte, 1) != 1) {
       STLOG_HAL_E("Error reading a valid NAD from the slave.");

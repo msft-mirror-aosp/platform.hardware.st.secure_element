@@ -67,6 +67,8 @@ int Tpdu_toByteArray(Tpdu* structTpdu, char* baTpdu) {
       baTpdu[checksumOffsetInTpdu + 1] = checksum[1];
       length = checksumOffsetInTpdu + 2;
       break;
+    default:
+      return -1;
   }
 
   return length;
@@ -83,19 +85,19 @@ int Tpdu_toByteArray(Tpdu* structTpdu, char* baTpdu) {
 ** Returns        true if checksum is ok, false otherwise.
 **
 *******************************************************************************/
-bool Tpdu_isChecksumOk(Tpdu* tpdu) {
+bool Tpdu_isChecksumOk(Tpdu *tpdu) {
   switch (ATP.checksumType) {
     case LRC:
       // TODO: implement
-      return -1;
+      return false;
     case CRC:;
       char buffer[TPDU_MAX_LENGTH];
       Tpdu_toByteArray(tpdu, buffer);
       if (tpdu->checksum ==
           computeCrc(buffer, (TPDU_PROLOGUE_LENGTH + tpdu->len))) {
-        return 0;
+        return true;
       } else {
-        return -1;
+        return false;
       }
   }
 }
@@ -118,6 +120,9 @@ bool Tpdu_isChecksumOk(Tpdu* tpdu) {
 int Tpdu_formTpdu(char nad, char pcb, uint8_t len, char* data, Tpdu* tpdu) {
   uint8_t i;
 
+  if (len > TPDU_MAX_DATA_LENGTH) {
+    return -1;
+  }
   // NAD - Copy the incoming nad into the tpdu nad
   tpdu->nad = nad;
   // PCB - Copy the incoming pcb into the tpdu pcb
@@ -213,7 +218,7 @@ uint16_t Tpdu_getChecksumValue(char* array, int checksumStartPosition,
 ** Returns         TPDU type (I-Block, R-Block or S-Block)
 **
 *******************************************************************************/
-TpduType Tpdu_getType(Tpdu* tpdu) {
+TpduType Tpdu_getType(Tpdu *tpdu) {
   if ((tpdu->pcb & 0x80) == 0x00) {
     return IBlock;
   } else if ((tpdu->pcb & 0xC0) == 0x80) {
