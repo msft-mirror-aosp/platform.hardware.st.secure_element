@@ -19,7 +19,7 @@
 #define LOG_TAG "StEse_HalApi"
 
 #include "StEseApi.h"
-#include <SpiLayerComm.h>
+#include "SpiLayerComm.h"
 #include <cutils/properties.h>
 #include <ese_config.h>
 #include "T1protocol.h"
@@ -29,6 +29,8 @@
 
 /* ESE Context structure */
 ese_Context_t ese_ctxt;
+
+const char* halVersion = "ST54-SE HAL1.0 Version 1.0.2";
 
 /******************************************************************************
  * Function         StEseLog_InitializeLogLevel
@@ -60,8 +62,7 @@ ESESTATUS StEse_init() {
   char ese_dev_node[64];
   std::string ese_node;
 
-  STLOG_HAL_D("%s : SteSE_open Enter EseLibStatus = %d ", __func__,
-              ese_ctxt.EseLibStatus);
+  STLOG_HAL_D("%s : SteSE_open Enter halVersion = %s ", __func__, halVersion);
   /*When spi channel is already opened return status as FAILED*/
   if (ese_ctxt.EseLibStatus != ESE_STATUS_CLOSE) {
     STLOG_HAL_D("already opened\n");
@@ -82,8 +83,7 @@ ESESTATUS StEse_init() {
   tSpiDriver.pDevName = ese_dev_node;
 
   /* Initialize SPI Driver layer */
-  T1protocol_init(&tSpiDriver);
-  if (wConfigStatus != ESESTATUS_SUCCESS) {
+  if (T1protocol_init(&tSpiDriver) != ESESTATUS_SUCCESS) {
     STLOG_HAL_E("T1protocol_init Failed");
     goto clean_and_return;
   }
@@ -145,7 +145,7 @@ ESESTATUS StEse_Transceive(StEse_data* pCmd, StEse_data* pRsp) {
   } else {
     ese_ctxt.EseLibStatus = ESE_STATUS_BUSY;
 
-    pRsp->p_data = (uint8_t*)malloc(254 * sizeof(uint8_t));
+    pRsp->p_data = (uint8_t*)malloc(ATP.ifsc * sizeof(uint8_t));
     /* Create local copy of cmd_data */
     memcpy(ese_ctxt.p_cmd_data, pCmd->p_data, pCmd->len);
     ese_ctxt.cmd_len = pCmd->len;
@@ -179,7 +179,7 @@ ESESTATUS StEse_Transceive(StEse_data* pCmd, StEse_data* pRsp) {
     }
     ese_ctxt.EseLibStatus = ESE_STATUS_IDLE;
 
-    STLOG_HAL_E(" %s Exit status 0x%x \n", __FUNCTION__, status);
+    STLOG_HAL_D(" %s Exit status 0x%x \n", __FUNCTION__, status);
 
     return status;
   }
