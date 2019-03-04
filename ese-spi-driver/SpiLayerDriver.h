@@ -26,8 +26,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-//#define ATP_FILE_PATH     "/data/vendor/ese/atp.bin"
-#define ATP_FILE_PATH "/data/atp.bin"
+#define ATP_FILE_PATH "/data/vendor/ese/atp.bin"
 
 #define MODE_TX 0
 #define MODE_RX 1
@@ -38,7 +37,7 @@
  *
  * @return The result of the operation, -1 if an error occurred, 0 if success.
  */
-int SpiLayerDriver_open(char* spiDevPath);
+int SpiLayerDriver_open(char *spiDevPath);
 
 /**
  * Close the spi device driver.
