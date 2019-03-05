@@ -53,7 +53,7 @@ void SpiLayerDriver_close();
  *
  * @return The amount of bytes read from the slave, -1 if something failed.
  */
-int SpiLayerDriver_read(char* rxBuffer, unsigned int bytesToRead);
+int SpiLayerDriver_read(uint8_t *rxBuffer, unsigned int bytesToRead);
 
 /**
  * Write txBufferLength bytes to the SPI interface.
@@ -63,6 +63,6 @@ int SpiLayerDriver_read(char* rxBuffer, unsigned int bytesToRead);
  *
  * @return The amount of bytes written to the slave, -1 if something failed.
  */
-int SpiLayerDriver_write(char* writeBuffer, unsigned int bytesToWrite);
+int SpiLayerDriver_write(uint8_t *writeBuffer, unsigned int bytesToWrite);
 
 #endif /* SPILAYERDRIVER_H_ */

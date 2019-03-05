@@ -76,7 +76,7 @@ extern Atp ATP;
  *
  * @return The value of the checksum.
  */
-uint16_t Atp_getChecksumValue(char* array, int checksumStartPosition);
+uint16_t Atp_getChecksumValue(uint8_t *array, int checksumStartPosition);
 
 /**
  * Sets the ATP struct that will be available for the whole system.
@@ -85,6 +85,6 @@ uint16_t Atp_getChecksumValue(char* array, int checksumStartPosition);
  *
  * @return 0 If everything is Ok, -1 otherwise.
  */
-int Atp_setAtp(char* baAtp);
+int Atp_setAtp(uint8_t *baAtp);
 
 #endif /* ATP_H_ */

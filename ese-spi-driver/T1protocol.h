@@ -77,9 +77,9 @@
  *
  * @return pcb The value of the pcb computed.
  */
-char T1protocol_getValidPcb(TpduType type, RBlockType subtype,
-                            uint8_t numSeqMaster, uint8_t numseqSlave,
-                            bool isLast);
+uint8_t T1protocol_getValidPcb(TpduType type, RBlockType subtype,
+                               uint8_t numSeqMaster, uint8_t numseqSlave,
+                               bool isLast);
 
 /**
  * Check if the checksum of a given tpdu is well formed.
@@ -240,7 +240,7 @@ void T1protocol_updateRecoveryStatus();
  *
  * @return The amount of data bytes saved into the apdu buffer.
  */
-uint8_t T1protocol_setRespApduData(Tpdu* respTpdu, char** respApduBuffer);
+uint8_t T1protocol_setRespApduData(Tpdu *respTpdu, uint8_t *respApduBuffer);
 
 /**
  * The first thing to do in the recovery mechanism is to ask for a
@@ -332,8 +332,8 @@ int T1protocol_handleTpduResponse(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
  *
  * @return 0 if everything went fine, -1 if something failed.
  */
-int T1protocol_formCommandTpduToSend(char* cmdApduPart, uint8_t cmdLength,
-                                     bool isLast, Tpdu* cmdTpdu);
+int T1protocol_formCommandTpduToSend(uint8_t *cmdApduPart, uint8_t cmdLength,
+                                     bool isLast, Tpdu *cmdTpdu);
 
 /**
  * Initializes the T1 Protocol.
@@ -370,8 +370,8 @@ int T1protocol_init(SpiDriver_config_t *tSpiDriver);
  *          - 1 if there are more response parts
  *          - -1 if an error occurred.
  */
-int T1protocol_transcieveApduPart(char* cmdApduPart, uint8_t cmdLength,
-                                  bool isLast, char* respApduPart,
+int T1protocol_transcieveApduPart(uint8_t* cmdApduPart, uint8_t cmdLength,
+                                  bool isLast, uint8_t* respApduPart,
                                   uint8_t* respLength);
 
 
