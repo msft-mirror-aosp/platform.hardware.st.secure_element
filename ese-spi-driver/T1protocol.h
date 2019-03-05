@@ -16,6 +16,9 @@
  *
  *
  ******************************************************************************/
+#ifndef _T1PROTOCOL_H_
+#define _T1PROTOCOL_H_
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -85,7 +88,7 @@ char T1protocol_getValidPcb(TpduType type, RBlockType subtype,
  *
  * @return 0 If checksum is ok, -1 otherwise.
  */
-int T1protocol_checkResponseTpduChecksum(Tpdu* tpdu);
+int T1protocol_checkResponseTpduChecksum(Tpdu *tpdu);
 
 /**
  * Check if the pcb of a given tpdu is valid.
@@ -94,7 +97,7 @@ int T1protocol_checkResponseTpduChecksum(Tpdu* tpdu);
  *
  * @return 0 If checksum is ok, -1 otherwise.
  */
-int T1protocol_checkResponsePcbConsistency(Tpdu* tpdu);
+int T1protocol_checkResponsePcbConsistency(Tpdu *tpdu);
 
 /**
  * Check if the length field of a given tpdu is valid.
@@ -103,7 +106,7 @@ int T1protocol_checkResponsePcbConsistency(Tpdu* tpdu);
  *
  * @return 0 If checksum is ok, -1 otherwise.
  */
-int T1protocol_checkResponseLenConsistency(Tpdu* tpdu);
+int T1protocol_checkResponseLenConsistency(Tpdu *tpdu);
 
 /**
  * Check if the sequence number of a given tpdu is valid.
@@ -112,7 +115,7 @@ int T1protocol_checkResponseLenConsistency(Tpdu* tpdu);
  *
  * @return 0 If checksum is ok, -1 otherwise.
  */
-int T1protocol_checkResponseSeqNumberConsistency(Tpdu* tpdu);
+int T1protocol_checkResponseSeqNumberConsistency(Tpdu *tpdu);
 
 /**
  * Check if an SBlock response was received after having transmitted a SBlock
@@ -123,8 +126,8 @@ int T1protocol_checkResponseSeqNumberConsistency(Tpdu* tpdu);
  *
  * @return 0 If checksum is ok, -1 otherwise.
  */
-int T1protocol_checkSBlockResponseConsistency(Tpdu* lastCmdTpduSent,
-                                              Tpdu* lastRespTpduReceived);
+int T1protocol_checkSBlockResponseConsistency(Tpdu *lastCmdTpduSent,
+                                              Tpdu *lastRespTpduReceived);
 
 /**
  * Check if the response TPDU is consistent (check the checksum, check if the
@@ -136,8 +139,8 @@ int T1protocol_checkSBlockResponseConsistency(Tpdu* lastCmdTpduSent,
  *
  * @return 0 If consistency is ok, -1 otherwise.
  */
-int T1protocol_checkTpduConsistency(Tpdu* lastCmdTpduSent,
-                                    Tpdu* lastRespTpduReceived);
+int T1protocol_checkTpduConsistency(Tpdu *lastCmdTpduSent,
+                                    Tpdu *lastRespTpduReceived);
 
 /**
  * Set the sequence numbers to it's initial values.
@@ -183,8 +186,8 @@ int T1protocol_processIBlock(Tpdu* originalCmdTpdu);
  * @return -1 if the retransmission needed fails, 0 if no more retransmission
  * were needed and 1 if extra retransmission success.
  */
-int T1protocol_processRBlock(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
-                             Tpdu* lastRespTpduReceived, int* bytesRead);
+int T1protocol_processRBlock(Tpdu *originalCmdTpdu, Tpdu *lastCmdTpduSent,
+                             Tpdu *lastRespTpduReceived, int *bytesRead);
 
 /**
  * Form a SBlock response according to a given SBlock Request.
@@ -195,7 +198,7 @@ int T1protocol_processRBlock(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
  *
  * @return 0 If all went is ok, -1 otherwise.
  */
-int T1protocol_formSblockResponse(Tpdu* responseTpdu, Tpdu* requestTpdu);
+int T1protocol_formSblockResponse(Tpdu *responseTpdu, Tpdu *requestTpdu);
 
 /**
  * Process the last SBlock received from the slave.
@@ -210,8 +213,8 @@ int T1protocol_formSblockResponse(Tpdu* responseTpdu, Tpdu* requestTpdu);
  * @return -1 if the extra retransmission needed fails or  1 if extra
  * retransmission success.
  */
-int T1protocol_processSBlock(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
-                             Tpdu* lastRespTpduReceived, int* bytesRead);
+int T1protocol_processSBlock(Tpdu *originalCmdTpdu, Tpdu *lastCmdTpduSent,
+                             Tpdu *lastRespTpduReceived, int *bytesRead);
 
 /**
  * Check if the sequence number of the response TPDU is the expected one.
@@ -221,7 +224,7 @@ int T1protocol_processSBlock(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
  *
  * @return true If sequence number is ok, false otherwise.
  */
-bool T1protocol_isSequenceNumberOk(Tpdu* originalTpdu, Tpdu* respTpdu);
+bool T1protocol_isSequenceNumberOk(Tpdu *originalTpdu, Tpdu *respTpdu);
 
 /**
  * Updates the recovery state to the following step.
@@ -251,14 +254,13 @@ uint8_t T1protocol_setRespApduData(Tpdu* respTpdu, char** respApduBuffer);
  *
  * @return 0 if everything went fine, -1 if something failed.
  */
-int T1protocol_doResendRequest(Tpdu* lastCmdTpduSent,
-                               Tpdu* lastRespTpduReceived, int* bytesRead);
+int T1protocol_doResendRequest(Tpdu *lastCmdTpduSent,
+                               Tpdu *lastRespTpduReceived, int *bytesRead);
 
 /**
  * The second thing to do in the recovery mechanism if the resend fails
  * is to perform a Resync.
  *
- * @param originalCmdTpdu Original Tpdu sent.
  * @param lastCmdTpduSent Last Tpdu sent, could be different than the
  * originalCmdTpdu if there was retransmissions request or SBlocks.
  * @param lastRespTpduReceived Last response received from the slave.
@@ -267,14 +269,13 @@ int T1protocol_doResendRequest(Tpdu* lastCmdTpduSent,
  *
  * @return 0 if everything went fine, -1 if something failed.
  */
-int T1protocol_doResyncRequest(Tpdu* lastCmdTpduSent,
-                               Tpdu* lastRespTpduReceived, int* bytesRead);
+int T1protocol_doResyncRequest(Tpdu *lastCmdTpduSent,
+                               Tpdu *lastRespTpduReceived, int *bytesRead);
 
 /**
  * Implements the recovery mechanism when a non-consistent TPDU has been
  * received or no response has been received before the timeout.
  *
- * @param originalCmdTpdu Original Tpdu sent.
  * @param lastCmdTpduSent Last Tpdu sent, could be different than the
  * originalCmdTpdu if there was retransmissions request or SBlocks.
  * @param lastRespTpduReceived Last response received from the slave.
@@ -288,11 +289,23 @@ int T1protocol_doResyncRequest(Tpdu* lastCmdTpduSent,
  *       and the user will need do the reset manually, as Power Manager is not
  *       yet implemented.
  */
-int T1protocol_doRecovery(Tpdu* lastCmdTpduSent, Tpdu* lastRespTpduReceived,
-                          int* bytesRead);
+int T1protocol_doRecovery(Tpdu *lastCmdTpduSent, Tpdu *lastRespTpduReceived,
+                          int *bytesRead);
 
-int T1protocol_doSoftReset(Tpdu* lastCmdTpduSent, Tpdu* lastRespTpduReceived,
-                           int* bytesRead);
+/**
+ * Send a soft reset (S-Block)
+ *
+ * @param lastCmdTpduSent Last Tpdu sent, could be different than the
+ * originalCmdTpdu if there was retransmissions request or SBlocks.
+ * @param lastRespTpduReceived Last response received from the slave.
+ * @param bytesRead If a retransmission occurs, this field contains the amout of
+ * bytes read from the slave in the new transaction.
+ *
+ * @return 0 if everything went fine, -1 if an error occurred.
+ */
+int T1protocol_doSoftReset(Tpdu *lastCmdTpduSent, Tpdu *lastRespTpduReceived,
+                           int *bytesRead);
+
 /**
  * Handles any TPDU response iteratively.
  *
@@ -327,7 +340,7 @@ int T1protocol_formCommandTpduToSend(char* cmdApduPart, uint8_t cmdLength,
  *
  * @return 0 if initialization was ok, -1 otherwise.
  */
-int T1protocol_init(SpiDriver_config_t* tSpiDriver);
+int T1protocol_init(SpiDriver_config_t *tSpiDriver);
 
 /**
  * This method is used to send and/or receive an APDU part. There are 3 ways of
@@ -361,6 +374,5 @@ int T1protocol_transcieveApduPart(char* cmdApduPart, uint8_t cmdLength,
                                   bool isLast, char* respApduPart,
                                   uint8_t* respLength);
 
-#ifdef DAEMONINTERFACETEST
 
-#endif /* DAEMONINTERFACETEST */
+#endif /* _T1PROTOCOL_H_ */

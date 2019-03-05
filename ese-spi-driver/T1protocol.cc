@@ -25,12 +25,13 @@
 #include "utils-lib/Iso13239CRC.h"
 
 #include "utils-lib/Tpdu.h"
+#include <errno.h>
+#include <string.h>
 
 uint8_t SEQ_NUM_MASTER;
 uint8_t SEQ_NUM_SLAVE;
 bool firstTransmission;
 uint8_t recoveryStatus;
-bool aborted;
 uint8_t IFSD;
 
 /*******************************************************************************
@@ -141,7 +142,7 @@ int T1protocol_checkResponsePcbConsistency(Tpdu* tpdu) {
     case IBlock:
       // Match the IBlock pcb received with the bits that must be 0. If
       // the result is higher than 0, means some of these bits was set to 1.
-      if ((tpdu->pcb & 0b00011111) > 0) {
+      if ((tpdu->pcb & 0b00011111)) {
         return -1;
       }
       break;
@@ -149,7 +150,7 @@ int T1protocol_checkResponsePcbConsistency(Tpdu* tpdu) {
     case RBlock:
       // Match the RBlock pcb received with the bits that must be 0. If
       // the result is higher than 0, means some of these bits was set to 1.
-      if ((tpdu->pcb & 0b01101100) > 0) {
+      if ((tpdu->pcb & 0b01101100)) {
         return -1;
       }
       break;
@@ -858,7 +859,7 @@ int T1protocol_doSoftReset(Tpdu* lastCmdTpduSent, Tpdu* lastRespTpduReceived,
     return -1;
   }
   *bytesRead = result;
-  return 1;
+  return -1;
 }
 
 /*******************************************************************************
@@ -905,9 +906,10 @@ int T1protocol_doRecovery(Tpdu* lastCmdTpduSent, Tpdu* lastRespTpduReceived,
       // We remove the ATP file to force the driver to read the ATP from the
       // SPI interface
       if (remove(ATP_FILE_PATH) == 0) {
-        STLOG_HAL_D("File deleted successfully");
+        STLOG_HAL_D("ATP file deleted successfully");
       } else {
-        STLOG_HAL_D("Error: unable to delete the file");
+        STLOG_HAL_D("Error: unable to delete ATP file: %d, %s", errno,
+                    strerror(errno));
       }
       STLOG_HAL_D("Soft reset required .");
       return T1protocol_doSoftReset(lastCmdTpduSent, lastRespTpduReceived,
@@ -1104,7 +1106,6 @@ int T1protocol_transcieveApduPart(char* cmdApduPart, uint8_t cmdLength,
   // Send the command Tpdu and receive the response.
   int rc;
   recoveryStatus = RECOVERY_STATUS_OK;
-  aborted = false;
   lastCmdTpduSent = originalCmdTpdu;
 
   rc = SpiLayerInterface_transcieveTpdu(&lastCmdTpduSent, &lastRespTpduReceived,

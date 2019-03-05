@@ -43,7 +43,7 @@ int SpiLayerDriver_open(char* spiDevPath) {
   STLOG_HAL_D("%s : Enter ", __func__);
   // Open the master spi device and save the spi device identifier
   spiDeviceId = open(spiDeviceName, O_RDWR | O_NOCTTY);
-  STLOG_HAL_D(" spiDeviceId: %d", spiDeviceId);
+  STLOG_HAL_V(" spiDeviceId: %d", spiDeviceId);
   if (spiDeviceId < 0) {
     return -1;
   }
