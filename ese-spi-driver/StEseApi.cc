@@ -30,7 +30,7 @@
 /* ESE Context structure */
 ese_Context_t ese_ctxt;
 
-const char* halVersion = "ST54-SE HAL1.0 Version 1.0.2";
+const char* halVersion = "ST54-SE HAL1.0 Version 1.0.3";
 
 /******************************************************************************
  * Function         StEseLog_InitializeLogLevel
@@ -149,8 +149,8 @@ ESESTATUS StEse_Transceive(StEse_data* pCmd, StEse_data* pRsp) {
     /* Create local copy of cmd_data */
     memcpy(ese_ctxt.p_cmd_data, pCmd->p_data, pCmd->len);
     ese_ctxt.cmd_len = pCmd->len;
-    char* CmdPart = (char*)pCmd->p_data;
-    char* RspPart = (char*)pRsp->p_data;
+    uint8_t* CmdPart = pCmd->p_data;
+    uint8_t* RspPart = pRsp->p_data;
 
     while (pCmd->len > ATP.ifsc) {
       pTxBlock_len = ATP.ifsc;
