@@ -37,9 +37,9 @@ Atp ATP = {.bwt = 0x0690, .checksumType = CRC, .ifsc = 0xFE};
 ** Returns          checksum value
 **
 *******************************************************************************/
-uint16_t Atp_getChecksumValue(char* array, int checksumStartPosition) {
-  return (uint16_t)((unsigned char)array[checksumStartPosition + 1] << 8) |
-         (unsigned char)array[checksumStartPosition];
+uint16_t Atp_getChecksumValue(uint8_t *array, int checksumStartPosition) {
+  return (uint16_t)((uint8_t)array[checksumStartPosition + 1] << 8) |
+         (uint8_t)array[checksumStartPosition];
 }
 
 /*******************************************************************************
@@ -53,7 +53,7 @@ uint16_t Atp_getChecksumValue(char* array, int checksumStartPosition) {
 ** Returns          0 If everything is Ok, -1 otherwise.
 **
 *******************************************************************************/
-int Atp_setAtp(char* baAtp) {
+int Atp_setAtp(uint8_t *baAtp) {
   uint8_t i;
   Atp tmpAtp;
 
