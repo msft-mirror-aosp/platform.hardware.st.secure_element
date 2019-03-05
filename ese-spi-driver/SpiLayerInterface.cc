@@ -135,9 +135,11 @@ int SpiLayerInterface_transcieveTpdu(Tpdu* cmdTpdu, Tpdu* respTpdu,
   }
   STLOG_HAL_D("%d bytes read from SPI interface", bytesRead);
 
-  char respTpduHexString[(5 + respTpdu->len) * 3];
-  Tpdu_toHexString(respTpdu, respTpduHexString);
-  STLOG_HAL_D("spiRx < %s", respTpduHexString);
+  uint8_t buffer[(5 + respTpdu->len)];
+  uint16_t length = Tpdu_toByteArray(respTpdu, buffer);
+  if (length > 0) {
+    DispHal("Rx", buffer, length);
+  }
   return bytesRead;
 }
 

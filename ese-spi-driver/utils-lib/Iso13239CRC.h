@@ -37,6 +37,6 @@
  *
  * @return The CRC of the data. -1 if something went wrong.
  */
-uint16_t computeCrc(char* data, int len);
+uint16_t computeCrc(uint8_t *data, int len);
 
 #endif /* ISO13239CRC_H_ */
