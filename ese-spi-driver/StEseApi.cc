@@ -30,7 +30,7 @@
 /* ESE Context structure */
 ese_Context_t ese_ctxt;
 
-const char* halVersion = "ST54-SE HAL1.0 Version 1.0.6";
+const char* halVersion = "ST54-SE HAL1.0 Version 1.0.7";
 
 /******************************************************************************
  * Function         StEseLog_InitializeLogLevel

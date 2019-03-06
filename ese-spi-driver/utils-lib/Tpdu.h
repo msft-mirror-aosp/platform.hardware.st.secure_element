@@ -25,6 +25,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "Atp.h"
 
@@ -115,6 +117,16 @@ uint16_t Tpdu_getChecksumValue(uint8_t *array, int checksumStartPosition,
  * @return The TPDU type of the tpdu.
  */
 TpduType Tpdu_getType(Tpdu *tpdu);
+
+/**
+ * Copy Tpdu Struct.
+ *
+ * @param     dest
+ *            src
+ *
+ * @return void
+ */
+void Tpdu_copy(Tpdu *dest, Tpdu *src);
 
 /**
  * Converts a TPDU into a hex string.
