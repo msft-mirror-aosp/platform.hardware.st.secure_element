@@ -93,8 +93,11 @@ int SpiLayerComm_readAtp() {
   uint8_t i;
   STLOG_HAL_D("%s : Enter ", __func__);
   // Read the ATP length
-  if (SpiLayerComm_waitForAtpLength() != 0) {
-    // Error reading the ATP length
+  if (SpiLayerDriver_reset() != -1) {
+    if (SpiLayerComm_waitForAtpLength() != 0) {
+      return -1;
+    }
+  } else {
     return -1;
   }
 
@@ -120,19 +123,6 @@ int SpiLayerComm_readAtp() {
     STLOG_HAL_E("Error setting ATP");
     return -1;
   }
-
-  STLOG_HAL_D("Creating ATP file path = %s", ATP_FILE_PATH);
-  FILE* atp_file = fopen(ATP_FILE_PATH, "wb+");
-  if (!atp_file) {
-    STLOG_HAL_E("Error creating ATP file: %d, %s", errno, strerror(errno));
-    // return -1;
-    // Todo should output an error -1
-    return 0;
-  }
-  // Save the ATP array to ATP file
-  fwrite(atpArray, sizeof(atpArray), 1, atp_file);
-  STLOG_HAL_D("ATP file created.");
-  fclose(atp_file);
 
   return 0;
 }
