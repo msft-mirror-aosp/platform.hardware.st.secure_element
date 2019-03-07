@@ -159,7 +159,9 @@ Return<void> SecureElement::openLogicalChannel(const hidl_vec<uint8_t>& aid,
   }
   /*Free the allocations*/
   free(cmdApdu.p_data);
+  cmdApdu.p_data = NULL;
   free(rspApdu.p_data);
+  rspApdu.p_data = NULL;
   if (sestatus != SecureElementStatus::SUCCESS) {
     /*If manageChanle is failed in any of above cases
     send the callback and return*/

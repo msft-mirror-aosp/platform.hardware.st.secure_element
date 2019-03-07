@@ -230,6 +230,31 @@ TpduType Tpdu_getType(Tpdu *tpdu) {
 
 /*******************************************************************************
 **
+** Function        Tpdu_copy
+**
+** Description     Copy a Tpdu Struct to an another one.
+**
+** Parameters      dest   - the destination tpdu
+**                 src    - the tpdu to be copied
+**
+** Returns         void
+**
+*******************************************************************************/
+void Tpdu_copy(Tpdu *dest, Tpdu *src) {
+  dest->checksum = src->checksum;
+  dest->len = src->len;
+  dest->nad = src->nad;
+  dest->pcb = src->pcb;
+  if (dest->data == NULL) {
+    dest->data = (uint8_t *)malloc(ATP.ifsc * sizeof(uint8_t));
+  }
+  if (((src->len) > 0) && ((src->len) < ATP.ifsc)) {
+    memcpy(dest->data, src->data, src->len);
+  }
+}
+
+/*******************************************************************************
+**
 ** Function        Tpdu_toHexString
 **
 ** Description     Converts the TPDU in hex string buffer.
