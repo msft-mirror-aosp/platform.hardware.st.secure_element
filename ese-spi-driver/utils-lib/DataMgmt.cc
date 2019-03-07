@@ -145,6 +145,8 @@ static int DataMgmt_DeletList(TpduRecvBuff_List_t* head) {
 
   while (current != NULL) {
     next = current->pNext;
+    free(current->tData.data);
+    current->tData.data = NULL;
     free(current);
     current = NULL;
     current = next;
