@@ -53,18 +53,6 @@ int SpiLayerInterface_init(SpiDriver_config_t* tSpiDriver) {
     STLOG_HAL_E("Error configuring the SPI bus.");
     return -1;
   }
-  // Check if ATP file exists
-  // If it exists, it means that ATP was previously read and hence we do not
-  // need to read it again
-  STLOG_HAL_D("check ATP file presence : %s", ATP_FILE_PATH);
-  if (fopen(ATP_FILE_PATH, "rb")) {
-    STLOG_HAL_V("ATP file exists.");
-    // ATP is stored in the file: load the config from the file and return.
-    SpiLayerComm_readAtpFromFile();
-    return 0;
-  } else {
-    STLOG_HAL_V("Cannot open ATP file: %d, %s", errno, strerror(errno));
-  }
 
   // First of all, read the ATP from the slave
   if (SpiLayerComm_readAtp() != 0) {
