@@ -605,7 +605,7 @@ int T1protocol_processSBlock(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
       }
     }
 
-    *lastCmdTpduSent = *originalCmdTpdu;
+    Tpdu_copy(lastCmdTpduSent, originalCmdTpdu);
     gNextCmd = I_block;
 
   } else if (lastRespTpduReceived->pcb == (uint8_t)SBLOCK_ABORT_REQUEST_MASK) {
@@ -1095,7 +1095,8 @@ int T1protocol_doRequestIFS() {
     return result;
   }
 
-  originalCmdTpdu = lastCmdTpduSent;
+  Tpdu_copy(&lastCmdTpduSent, &originalCmdTpdu);
+
   // Send the SBlock and read the response from the slave.
   result = SpiLayerInterface_transcieveTpdu(
       &lastCmdTpduSent, &lastRespTpduReceived, DEFAULT_NBWT);
@@ -1181,7 +1182,7 @@ int T1protocol_transcieveApduPart(uint8_t* cmdApduPart, uint8_t cmdLength,
   // Send the command Tpdu and receive the response.
   int rc;
   recoveryStatus = RECOVERY_STATUS_OK;
-  lastCmdTpduSent = originalCmdTpdu;
+  Tpdu_copy(&lastCmdTpduSent, &originalCmdTpdu);
 
   gNextCmd = I_block;
   while (gNextCmd != 0) {
@@ -1238,6 +1239,13 @@ int T1protocol_transcieveApduPart(uint8_t* cmdApduPart, uint8_t cmdLength,
 
   pRsp->len = pRes.len;
   pRsp->p_data = pRes.p_data;
+
+  free(originalCmdTpdu.data);
+  originalCmdTpdu.data = NULL;
+  free(lastCmdTpduSent.data);
+  lastCmdTpduSent.data = NULL;
+  free(lastRespTpduReceived.data);
+  lastRespTpduReceived.data = NULL;
 
   if ((lastRespTpduReceived.pcb & IBLOCK_M_BIT_MASK) > 0) {
     return 1;
