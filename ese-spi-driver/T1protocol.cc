@@ -708,33 +708,23 @@ void T1protocol_updateRecoveryStatus() {
       break;
 
     case RECOVERY_STATUS_RESEND_1:
-      STLOG_HAL_D("recoveryStatus: RESEND 1 -> RESEND 2");
-      recoveryStatus = RECOVERY_STATUS_RESEND_2;
-      break;
-
-    case RECOVERY_STATUS_RESEND_2:
       if (!firstTransmission) {
-        STLOG_HAL_D("recoveryStatus: RESEND 2 -> RESYNC 1");
+        STLOG_HAL_D("recoveryStatus: RESEND 1 -> RESYNC 1");
         recoveryStatus = RECOVERY_STATUS_RESYNC_1;
       } else {
-        STLOG_HAL_D("recoveryStatus: RESEND 2 -> SOFT RESET");
+        STLOG_HAL_D("recoveryStatus: RESEND 1 -> SOFT RESET");
         recoveryStatus = RECOVERY_STATUS_WARM_RESET;
       }
       break;
 
     case RECOVERY_STATUS_RESYNC_1:
       STLOG_HAL_D("recoveryStatus: RESYNC 1 -> RESYNC 2");
-      recoveryStatus = RECOVERY_STATUS_RESYNC_2;
-      break;
-
-    case RECOVERY_STATUS_RESYNC_2:
-      STLOG_HAL_D("recoveryStatus: RESYNC 2 -> RESYNC 3");
-      recoveryStatus = RECOVERY_STATUS_RESYNC_3;
-      break;
-
-    case RECOVERY_STATUS_RESYNC_3:
-      STLOG_HAL_D("recoveryStatus: RESYNC 3 -> WARM RESET");
       recoveryStatus = RECOVERY_STATUS_WARM_RESET;
+      break;
+
+    case RECOVERY_STATUS_WARM_RESET:
+      STLOG_HAL_D("recoveryStatus: WARM_RESET (recovery completed)");
+      recoveryStatus = RECOVERY_STATUS_OK;
       break;
   }
 }
@@ -965,6 +955,7 @@ int T1protocol_doRecovery() {
       STLOG_HAL_D("Soft reset required .");
       gNextCmd = S_SWReset_REQ;
       break;
+    case RECOVERY_STATUS_KO:
     default:
       return -1;
       break;
