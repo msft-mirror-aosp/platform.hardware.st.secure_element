@@ -17,14 +17,13 @@
  *
  ******************************************************************************/
 
-
 #ifndef _STESEAPI_H_
 #define _STESEAPI_H_
 
 #include <stdint.h>
 
 typedef struct StEse_data {
-  uint8_t len;     /*!< length of the buffer */
+  uint16_t len;    /*!< length of the buffer */
   uint8_t* p_data; /*!< pointer to a buffer */
 } StEse_data;
 
@@ -111,6 +110,5 @@ ESESTATUS StEse_close(void);
  *
  */
 bool StEseApi_isOpen();
-
 
 #endif /* _STESEAPI_H_ */
