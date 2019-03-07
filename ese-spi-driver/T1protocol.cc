@@ -582,15 +582,12 @@ int T1protocol_processSBlock(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
   if (lastRespTpduReceived->pcb == (uint8_t)SBLOCK_WTX_REQUEST_MASK) {
     gNextCmd = S_WTX_RES;
   } else if (lastRespTpduReceived->pcb == (uint8_t)SBLOCK_IFS_REQUEST_MASK) {
+    gNextCmd = S_IFS_RES;
+  } else if (lastRespTpduReceived->pcb == (uint8_t)SBLOCK_IFS_RESPONSE_MASK) {
     ATP.ifsc = (uint8_t)lastRespTpduReceived->data[0];
-    T1protocol_formSblockResponse(lastCmdTpduSent, lastRespTpduReceived);
-    rc = SpiLayerInterface_transcieveTpdu(lastCmdTpduSent, lastRespTpduReceived,
-                                          DEFAULT_NBWT);
-    if (rc < 0) {
-      return rc;
-    }
-    return 1;
-  } else if (lastRespTpduReceived->pcb == (uint8_t)SBLOCK_RESYNCH_REQUEST_MASK) {
+    return 0;
+  } else if (lastRespTpduReceived->pcb ==
+             (uint8_t)SBLOCK_RESYNCH_REQUEST_MASK) {
     T1protocol_resetSequenceNumbers();
     gNextCmd = S_Resync_RES;
   } else if (lastRespTpduReceived->pcb ==
@@ -1074,6 +1071,52 @@ int T1protocol_formCommandTpduToSend(uint8_t* cmdApduPart, uint8_t cmdLength,
 
 /*******************************************************************************
 **
+** Function         T1protocol_doRequestIFS
+**
+** Description      Send a IFS request to negotiate the IFSD value. Use the same
+**                  value for IFSD than the IFSC received in the ATP.
+**
+** Parameters      None
+**
+** Returns         0 if everything went fine, -1 if something failed.
+**
+*******************************************************************************/
+int T1protocol_doRequestIFS() {
+  Tpdu originalCmdTpdu, lastCmdTpduSent, lastRespTpduReceived;
+  originalCmdTpdu.data = (uint8_t*)malloc(ATP.ifsc * sizeof(uint8_t));
+  lastCmdTpduSent.data = (uint8_t*)malloc(ATP.ifsc * sizeof(uint8_t));
+  lastRespTpduReceived.data = (uint8_t*)malloc(ATP.ifsc * sizeof(uint8_t));
+
+  STLOG_HAL_D("%s : Enter ", __func__);
+  // Form a SBlock Resynch request Tpdu to sent.
+  int result = Tpdu_formTpdu(NAD_HOST_TO_SLAVE, SBLOCK_IFS_REQUEST_MASK, 1,
+                             &ATP.ifsc, &originalCmdTpdu);
+  if (result) {
+    return result;
+  }
+
+  originalCmdTpdu = lastCmdTpduSent;
+  // Send the SBlock and read the response from the slave.
+  result = SpiLayerInterface_transcieveTpdu(
+      &lastCmdTpduSent, &lastRespTpduReceived, DEFAULT_NBWT);
+  if (result <= 0) {
+    return -1;
+  }
+
+  result = T1protocol_handleTpduResponse(&originalCmdTpdu, &lastCmdTpduSent,
+                                         &lastRespTpduReceived, &result);
+
+  free(originalCmdTpdu.data);
+  originalCmdTpdu.data = NULL;
+  free(lastCmdTpduSent.data);
+  lastCmdTpduSent.data = NULL;
+  free(lastRespTpduReceived.data);
+  lastRespTpduReceived.data = NULL;
+  return result;
+}
+
+/*******************************************************************************
+**
 ** Function         T1protocol_init
 **
 ** Description      Initializes the T1 Protocol.
@@ -1095,6 +1138,10 @@ int T1protocol_init(SpiDriver_config_t* tSpiDriver) {
 
   firstTransmission = true;
   IFSD = 254;
+  // Negotiate IFS value
+  if (T1protocol_doRequestIFS() != 0) {
+    return -1;
+  }
 
   return 0;
 }
