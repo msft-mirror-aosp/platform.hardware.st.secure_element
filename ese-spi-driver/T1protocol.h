@@ -330,6 +330,15 @@ int T1protocol_doSoftReset(Tpdu *lastCmdTpduSent, Tpdu *lastRespTpduReceived,
                            int *bytesRead);
 
 /**
+ * Send IFS request(S-Block)
+ *
+ * @param  None.
+ *
+ * @return 0 if everything went fine, -1 if an error occurred.
+ */
+int T1protocol_doRequestIFS();
+
+/**
  * Handles any TPDU response iteratively.
  *
  * @param originalCmdTpdu Original Tpdu sent.
