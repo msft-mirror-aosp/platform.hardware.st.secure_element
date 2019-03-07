@@ -30,7 +30,7 @@
 /* ESE Context structure */
 ese_Context_t ese_ctxt;
 
-const char* halVersion = "ST54-SE HAL1.0 Version 1.0.3";
+const char* halVersion = "ST54-SE HAL1.0 Version 1.0.4";
 
 /******************************************************************************
  * Function         StEseLog_InitializeLogLevel
@@ -127,7 +127,7 @@ bool StEseApi_isOpen() {
 ESESTATUS StEse_Transceive(StEse_data* pCmd, StEse_data* pRsp) {
   ESESTATUS status = ESESTATUS_SUCCESS;
   static int pTxBlock_len = 0;
-  uint8_t pCmdlen = pCmd->len;
+  uint16_t pCmdlen = pCmd->len;
 
   STLOG_HAL_D("%s : Enter EseLibStatus = %d ", __func__, ese_ctxt.EseLibStatus);
 
@@ -145,18 +145,16 @@ ESESTATUS StEse_Transceive(StEse_data* pCmd, StEse_data* pRsp) {
   } else {
     ese_ctxt.EseLibStatus = ESE_STATUS_BUSY;
 
-    pRsp->p_data = (uint8_t*)malloc(ATP.ifsc * sizeof(uint8_t));
     /* Create local copy of cmd_data */
     memcpy(ese_ctxt.p_cmd_data, pCmd->p_data, pCmd->len);
     ese_ctxt.cmd_len = pCmd->len;
     uint8_t* CmdPart = pCmd->p_data;
-    uint8_t* RspPart = pRsp->p_data;
 
-    while (pCmd->len > ATP.ifsc) {
+    while (pCmdlen > ATP.ifsc) {
       pTxBlock_len = ATP.ifsc;
-      int rc = T1protocol_transcieveApduPart(CmdPart, pTxBlock_len, false,
-                                             RspPart, &pRsp->len);
 
+      int rc = T1protocol_transcieveApduPart(CmdPart, pTxBlock_len, false,
+                                             (StEse_data*)pRsp);
       if (rc < 0) {
         status = ESESTATUS_FAILED;
         ese_ctxt.EseLibStatus = ESE_STATUS_IDLE;
@@ -169,9 +167,8 @@ ESESTATUS StEse_Transceive(StEse_data* pCmd, StEse_data* pRsp) {
                     __FUNCTION__);
       }
     }
-
-    int rc = T1protocol_transcieveApduPart(CmdPart, pCmdlen, true, RspPart,
-                                           &pRsp->len);
+    int rc = T1protocol_transcieveApduPart(CmdPart, pCmdlen, true,
+                                           (StEse_data*)pRsp);
     if (rc < 0) status = ESESTATUS_FAILED;
 
     if (ESESTATUS_SUCCESS != status) {

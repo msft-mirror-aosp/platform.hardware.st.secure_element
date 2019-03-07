@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "SpiLayerInterface.h"
+#include "StEseApi.h"
 #include "utils-lib/Tpdu.h"
 
 // Recovery states
@@ -64,6 +65,19 @@
 // bool aborted;
 // uint8_t IFSD;
 
+typedef enum {
+  Idle = 0,
+  I_block,
+  R_ACK,
+  R_CRC_Error,
+  R_Other_Error,
+  S_Resync_REQ,
+  S_Resync_RES,
+  S_IFS_REQ,
+  S_IFS_RES,
+  S_WTX_RES,
+  S_SWReset_REQ
+} T1TProtocol_TransceiveState;
 /**
  * Form a valid pcb according to the Tpdu type, subtype, master sequence number,
  * slave sequence number and isLast.
@@ -163,31 +177,32 @@ void T1protocol_updateSlaveSequenceNumber();
  * Process the last IBlock received from the slave.
  *
  * @param originalCmdTpdu Original Tpdu sent.
- * @param lastCmdTpduSent Last Tpdu sent, could be different than the
- * originalCmdTpdu if there was retransmissions request or SBlocks.
  * @param lastRespTpduReceived Last response received from the slave.
- * @param bytesRead If a retransmission occurs, this field contains the amout of
- * bytes read from the slave in the new transaction.
  *
- * @return 0.
  */
-int T1protocol_processIBlock(Tpdu* originalCmdTpdu);
+void T1protocol_processIBlock(Tpdu *originalCmdTpdu,
+                              Tpdu *lastRespTpduReceived);
 
 /**
  * Process the last RBlock received from the slave.
  *
  * @param originalCmdTpdu Original Tpdu sent.
- * @param lastCmdTpduSent Last Tpdu sent, could be different than the
- * originalCmdTpdu if there was retransmissions request or SBlocks.
  * @param lastRespTpduReceived Last response received from the slave.
- * @param bytesRead If a retransmission occurs, this field contains the amout of
- * bytes read from the slave in the new transaction.
+ *
+ */
+void T1protocol_processRBlock(Tpdu *originalCmdTpdu,
+                              Tpdu *lastRespTpduReceived);
+
+/**
+ * Process the last RBlock received from the slave.
+ *
+ * @param rack if 1, send a ack frame, nack otherwise.
+ * @param lastRespTpduReceived Last response received from the slave.
  *
  * @return -1 if the retransmission needed fails, 0 if no more retransmission
  * were needed and 1 if extra retransmission success.
  */
-int T1protocol_processRBlock(Tpdu *originalCmdTpdu, Tpdu *lastCmdTpduSent,
-                             Tpdu *lastRespTpduReceived, int *bytesRead);
+int T1protocol_sendRBlock(int rack, Tpdu *lastRespTpduReceived);
 
 /**
  * Form a SBlock response according to a given SBlock Request.
@@ -207,14 +222,12 @@ int T1protocol_formSblockResponse(Tpdu *responseTpdu, Tpdu *requestTpdu);
  * @param lastCmdTpduSent Last Tpdu sent, could be different than the
  * originalCmdTpdu if there was retransmissions request or SBlocks.
  * @param lastRespTpduReceived Last response received from the slave.
- * @param bytesRead If a retransmission occurs, this field contains the amout of
- * bytes read from the slave in the new transaction.
  *
  * @return -1 if the extra retransmission needed fails or  1 if extra
  * retransmission success.
  */
 int T1protocol_processSBlock(Tpdu *originalCmdTpdu, Tpdu *lastCmdTpduSent,
-                             Tpdu *lastRespTpduReceived, int *bytesRead);
+                             Tpdu *lastRespTpduReceived);
 
 /**
  * Check if the sequence number of the response TPDU is the expected one.
@@ -243,6 +256,17 @@ void T1protocol_updateRecoveryStatus();
 uint8_t T1protocol_setRespApduData(Tpdu *respTpdu, uint8_t *respApduBuffer);
 
 /**
+ * If the eSE send a S(WTX request), acknowledge it by sending
+ * a S(WTX response)
+ *
+ * @param lastRespTpduReceived Last response received from the slave.
+ *
+ * @return bytesRead if data was read, 0 if timeout expired with
+ *         no response, -1 otherwise
+ */
+int T1protocol_doWTXResponse(Tpdu *lastRespTpduReceived);
+
+/**
  * The first thing to do in the recovery mechanism is to ask for a
  * retransmission.
  *
@@ -269,8 +293,7 @@ int T1protocol_doResendRequest(Tpdu *lastCmdTpduSent,
  *
  * @return 0 if everything went fine, -1 if something failed.
  */
-int T1protocol_doResyncRequest(Tpdu *lastCmdTpduSent,
-                               Tpdu *lastRespTpduReceived, int *bytesRead);
+int T1protocol_doResyncRequest(Tpdu *lastRespTpduReceived);
 
 /**
  * Implements the recovery mechanism when a non-consistent TPDU has been
@@ -289,8 +312,7 @@ int T1protocol_doResyncRequest(Tpdu *lastCmdTpduSent,
  *       and the user will need do the reset manually, as Power Manager is not
  *       yet implemented.
  */
-int T1protocol_doRecovery(Tpdu *lastCmdTpduSent, Tpdu *lastRespTpduReceived,
-                          int *bytesRead);
+int T1protocol_doRecovery();
 
 /**
  * Send a soft reset (S-Block)
@@ -318,8 +340,8 @@ int T1protocol_doSoftReset(Tpdu *lastCmdTpduSent, Tpdu *lastRespTpduReceived,
  *
  * @return 0 if everything went fine, -1 if an error occurred.
  */
-int T1protocol_handleTpduResponse(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
-                                  Tpdu* lastRespTpduReceived, int* bytesRead);
+int T1protocol_handleTpduResponse(Tpdu *originalCmdTpdu, Tpdu *lastCmdTpduSent,
+                                  Tpdu *lastRespTpduReceived, int *bytesRead);
 
 /**
  * Form a valid Tpdu to send according to the if we need to send
@@ -358,8 +380,7 @@ int T1protocol_init(SpiDriver_config_t *tSpiDriver);
  * @param cmdApduPart The cmdApdu part that shall be sent (or null).
  * @param cmdLength The length of the cmdApduPart to be sent (or null).
  * @param isLast Either APDU_PART_IS_NOT_LAST or APDU_PART_IS_LAST (or null).
- * @param respApduPart The buffer where to store the responseApduPart (or null).
- * @param respLength The buffer where to store the responseApduPart length
+ * @param pRsp Structure to the response buffer and length.
  *      (or null).
  *
  * @return If no response is expected:
@@ -370,9 +391,7 @@ int T1protocol_init(SpiDriver_config_t *tSpiDriver);
  *          - 1 if there are more response parts
  *          - -1 if an error occurred.
  */
-int T1protocol_transcieveApduPart(uint8_t* cmdApduPart, uint8_t cmdLength,
-                                  bool isLast, uint8_t* respApduPart,
-                                  uint8_t* respLength);
-
+int T1protocol_transcieveApduPart(uint8_t *cmdApduPart, uint8_t cmdLength,
+                                  bool isLast, StEse_data *pRsp);
 
 #endif /* _T1PROTOCOL_H_ */
