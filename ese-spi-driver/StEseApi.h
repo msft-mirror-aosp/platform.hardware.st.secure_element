@@ -42,9 +42,6 @@ typedef enum {
 
 typedef enum {
   ESE_STATUS_CLOSE = 0x00,
-  ESE_STATUS_BUSY,
-  ESE_STATUS_RECOVERY,
-  ESE_STATUS_IDLE,
   ESE_STATUS_OPEN,
 } SpiEse_status;
 
