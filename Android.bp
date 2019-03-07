@@ -17,6 +17,7 @@ cc_library_shared {
         "ese-spi-driver/utils-lib/ese_config.cc",
         "ese-spi-driver/utils-lib/config.cc",
         "ese-spi-driver/utils-lib/android_logmsg.cc",
+        "ese-spi-driver/utils-lib/DataMgmt.cc",
     ],
 
     local_include_dirs: [
