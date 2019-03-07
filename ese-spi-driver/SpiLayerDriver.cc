@@ -144,3 +144,18 @@ int SpiLayerDriver_write(uint8_t* txBuffer, unsigned int txBufferLength) {
   gettimeofday(&lastRxTxTime, 0);
   return rc;
 }
+
+/*******************************************************************************
+**
+** Function         SpiLayerDriver_reset
+**
+** Description      Send a Reset pulse to the eSE.
+**
+** Parameters       none
+**
+** Returns          O if success, -1 otherwise
+**
+*******************************************************************************/
+int SpiLayerDriver_reset() {
+  return ioctl(spiDeviceId, ST54J_SE_PULSE_RESET, NULL);
+}
