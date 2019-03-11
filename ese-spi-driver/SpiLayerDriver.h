@@ -37,7 +37,7 @@
 /**
  * Open the spi device driver.
  *
- * @return The result of the operation, -1 if an error occurred, 0 if success.
+ * @return  -1 if an error occurred, file descriptor if success.
  */
 int SpiLayerDriver_open(char *spiDevPath);
 

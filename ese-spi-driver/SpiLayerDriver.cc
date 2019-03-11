@@ -35,7 +35,7 @@ struct timeval lastRxTxTime;
 **
 ** Parameters       spiDevPath - Spi device path.
 **
-** Returns          0 if everything is ok, -1 otherwise.
+** Returns          the file descriptor if everything is ok, -1 otherwise.
 **
 *******************************************************************************/
 int SpiLayerDriver_open(char* spiDevPath) {
@@ -50,7 +50,7 @@ int SpiLayerDriver_open(char* spiDevPath) {
   currentMode = MODE_RX;
   gettimeofday(&lastRxTxTime, 0);
 
-  return 0;
+  return spiDeviceId;
 }
 
 /*******************************************************************************
