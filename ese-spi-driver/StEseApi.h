@@ -108,4 +108,16 @@ ESESTATUS StEse_close(void);
  */
 bool StEseApi_isOpen();
 
+/**
+ * StEse_getAtr
+ *
+ * This function get the last ATR received.
+ *
+ * @param    void
+ *
+ * @return   pointer to the ATP array.
+ *
+ */
+uint8_t* StEse_getAtr(void);
+
 #endif /* _STESEAPI_H_ */
