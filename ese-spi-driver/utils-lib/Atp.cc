@@ -23,6 +23,7 @@
 
 Atp ATP = {.bwt = 0x0690, .checksumType = CRC, .ifsc = 0xFE};
 
+uint8_t gATP[40];
 //************************************ Functions *******************************
 
 /*******************************************************************************
@@ -59,6 +60,10 @@ int Atp_setAtp(uint8_t *baAtp) {
 
   // Length
   tmpAtp.len = (uint8_t)baAtp[LEN_OFFSET_IN_ATP];
+
+  if (tmpAtp.len) {
+    memcpy(gATP, baAtp, tmpAtp.len);
+  }
 
   tmpAtp.checksum = Atp_getChecksumValue(baAtp, CHECKSUM_OFFSET_IN_ATP);
 
@@ -120,3 +125,15 @@ int Atp_setAtp(uint8_t *baAtp) {
   ATP = tmpAtp;
   return 0;
 }
+
+/*******************************************************************************
+**
+** Function         Atp_getAtp
+**
+** Description     Gets the ATP stored.
+**
+**
+** Returns          pointer to the ATP array
+**
+*******************************************************************************/
+uint8_t *Atp_getAtp() { return &gATP[0]; }
