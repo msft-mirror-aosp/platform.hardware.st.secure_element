@@ -185,7 +185,7 @@ Return<void> SecureElement::openLogicalChannel(const hidl_vec<uint8_t>& aid,
   memset(&cmdApdu, 0x00, sizeof(StEse_data));
   memset(&rspApdu, 0x00, sizeof(StEse_data));
 
-  cmdApdu.len = (int32_t)(5 + aid.size());
+  cmdApdu.len = (int32_t)(6 + aid.size());
   cmdApdu.p_data = (uint8_t*)malloc(cmdApdu.len * sizeof(uint8_t));
   if (cmdApdu.p_data != NULL) {
     uint8_t xx = 0;
@@ -195,7 +195,7 @@ Return<void> SecureElement::openLogicalChannel(const hidl_vec<uint8_t>& aid,
     cmdApdu.p_data[xx++] = p2;          // P2
     cmdApdu.p_data[xx++] = aid.size();  // Lc
     memcpy(&cmdApdu.p_data[xx], aid.data(), aid.size());
-
+    cmdApdu.p_data[xx + aid.size()] = 0x00;  // Le
     status = StEse_Transceive(&cmdApdu, &rspApdu);
   }
 
@@ -264,7 +264,7 @@ Return<void> SecureElement::openBasicChannel(const hidl_vec<uint8_t>& aid,
   memset(&cmdApdu, 0x00, sizeof(StEse_data));
   memset(&rspApdu, 0x00, sizeof(StEse_data));
 
-  cmdApdu.len = (int32_t)(5 + aid.size());
+  cmdApdu.len = (int32_t)(6 + aid.size());
   cmdApdu.p_data = (uint8_t*)malloc(cmdApdu.len * sizeof(uint8_t));
   if (cmdApdu.p_data != NULL) {
     uint8_t xx = 0;
@@ -274,6 +274,7 @@ Return<void> SecureElement::openBasicChannel(const hidl_vec<uint8_t>& aid,
     cmdApdu.p_data[xx++] = p2;          // P2
     cmdApdu.p_data[xx++] = aid.size();  // Lc
     memcpy(&cmdApdu.p_data[xx], aid.data(), aid.size());
+    cmdApdu.p_data[xx + aid.size()] = 0x00;  // Le
 
     status = StEse_Transceive(&cmdApdu, &rspApdu);
   }
