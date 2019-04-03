@@ -30,9 +30,7 @@
 
 uint8_t SEQ_NUM_MASTER;
 uint8_t SEQ_NUM_SLAVE;
-bool firstTransmission;
 uint8_t recoveryStatus;
-uint8_t IFSD;
 T1TProtocol_TransceiveState gNextCmd = Idle;
 
 /*******************************************************************************
@@ -190,7 +188,7 @@ int T1protocol_checkResponseLenConsistency(Tpdu* tpdu) {
     case IBlock:
       // If the last Tpdu received was an IBlock, the len must be lower or
       // equal than the ATP ifsd field.
-      if (tpdu->len > IFSD) {
+      if (tpdu->len > ATP.ifsc) {
         return -1;
       }
       break;
@@ -705,13 +703,8 @@ void T1protocol_updateRecoveryStatus() {
       break;
 
     case RECOVERY_STATUS_RESEND_1:
-      if (!firstTransmission) {
         STLOG_HAL_D("recoveryStatus: RESEND 1 -> RESYNC 1");
         recoveryStatus = RECOVERY_STATUS_RESYNC_1;
-      } else {
-        STLOG_HAL_D("recoveryStatus: RESEND 1 -> SOFT RESET");
-        recoveryStatus = RECOVERY_STATUS_WARM_RESET;
-      }
       break;
 
     case RECOVERY_STATUS_RESYNC_1:
@@ -988,10 +981,6 @@ int T1protocol_handleTpduResponse(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
     STLOG_HAL_D("bytesRead = 0 -> Going into recovery.");
     rc = T1protocol_doRecovery();
     return rc;
-  } else {
-    if (firstTransmission) {
-      firstTransmission = false;
-    }
   }
 
   // Check the consistency of the last received tpdu
@@ -1130,17 +1119,6 @@ int T1protocol_doRequestIFS() {
 int T1protocol_init(SpiDriver_config_t* tSpiDriver) {
   STLOG_HAL_D("%s : Enter ", __func__);
   if (SpiLayerInterface_init(tSpiDriver) != 0) {
-    return -1;
-  }
-
-  STLOG_HAL_V("Initializing T=1 Protocol...");
-  SEQ_NUM_MASTER = 0;
-  SEQ_NUM_SLAVE = 0;
-
-  firstTransmission = true;
-  IFSD = 254;
-  // Negotiate IFS value
-  if (T1protocol_doRequestIFS() != 0) {
     return -1;
   }
 
