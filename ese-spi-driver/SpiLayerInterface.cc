@@ -18,19 +18,21 @@
  ******************************************************************************/
 #define LOG_TAG "StEse-SpiLayerInterface"
 #include "SpiLayerInterface.h"
+#include <errno.h>
+#include <string.h>
 #include <sys/time.h>
 #include "SpiLayerComm.h"
 #include "SpiLayerDriver.h"
 #include "T1protocol.h"
 #include "android_logmsg.h"
 #include "utils-lib/Atp.h"
-#include <errno.h>
-#include <string.h>
 
 #define SPI_BITS_PER_WORD 8
 #define SPI_MODE SPI_MODE_0
 
 #define KHZ_TO_HZ 1000
+
+static bool mFirstActivation = false;
 
 /*******************************************************************************
 **
@@ -57,25 +59,13 @@ int SpiLayerInterface_init(SpiDriver_config_t* tSpiDriver) {
     return -1;
   }
 
-  // First of all, read the ATP from the slave
-  if (SpiLayerComm_readAtp() != 0) {
-    // Error reading the ATP
-    STLOG_HAL_E("Error reading the ATP.");
-    return -1;
+  if (!mFirstActivation) {
+    if (SpiLayerInterface_setup() == -1) {
+      return -1;
+    }
+    mFirstActivation = true;
+    STLOG_HAL_D("SPI bus working at ATP.msf =  %i KHz", ATP.msf);
   }
-
-  STLOG_HAL_D("SPI bus working at ATP.msf =  %i KHz", ATP.msf);
-  /*  if(ATP.msf < actualFreq) {
-        actualFreq = ATP.msf;
-        if(SpiLayerDriver_setMaxFreqSpeed(actualFreq * KHZ_TO_HZ) != 0) {
-            ALOGE("Error setting frequency.");
-            return -1;
-        }
-    }*/
-
-  // pollInterval = PreferenceHelper_getPollInterval();
-  // ALOGD(TAG, "Poll interval read from preferences: %d nanoseconds",
-  // pollInterval);
 
   STLOG_HAL_D("SPI Driver interface initialized.");
   return 0;
@@ -150,4 +140,29 @@ void SpiLayerInterface_close(void* pDevHandle) {
     STLOG_HAL_D("SpiLayerInterface_close");
     SpiLayerDriver_close();
   }
+}
+/*******************************************************************************
+**
+** Function         SpiLayerInterface_setup
+**
+** Description      Read the ATP by performing SE reset and negotiate the IFSD.
+**
+** Parameters       pDevHandle - device handle
+**
+** Returns          0 if connection could be initialized, -1 otherwise.
+**
+*******************************************************************************/
+int SpiLayerInterface_setup() {
+  // First of all, read the ATP from the slave
+  if (SpiLayerComm_readAtp() != 0) {
+    // Error reading the ATP
+    STLOG_HAL_E("Error reading the ATP.");
+    return -1;
+  }
+  T1protocol_resetSequenceNumbers();
+  // Negotiate IFS value
+  if (T1protocol_doRequestIFS() != 0) {
+    return -1;
+  }
+  return 0;
 }
