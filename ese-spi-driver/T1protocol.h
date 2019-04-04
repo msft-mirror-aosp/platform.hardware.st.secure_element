@@ -318,16 +318,11 @@ int T1protocol_doRecovery();
 /**
  * Send a soft reset (S-Block)
  *
- * @param lastCmdTpduSent Last Tpdu sent, could be different than the
- * originalCmdTpdu if there was retransmissions request or SBlocks.
  * @param lastRespTpduReceived Last response received from the slave.
- * @param bytesRead If a retransmission occurs, this field contains the amout of
- * bytes read from the slave in the new transaction.
  *
  * @return 0 if everything went fine, -1 if an error occurred.
  */
-int T1protocol_doSoftReset(Tpdu *lastCmdTpduSent, Tpdu *lastRespTpduReceived,
-                           int *bytesRead);
+int T1protocol_doSoftReset(Tpdu* lastRespTpduReceived);
 
 /**
  * Send IFS request(S-Block)
