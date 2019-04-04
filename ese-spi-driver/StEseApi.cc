@@ -31,7 +31,7 @@
 /* ESE Context structure */
 ese_Context_t ese_ctxt;
 
-const char* halVersion = "ST54-SE HAL1.0 Version 1.0.13";
+const char* halVersion = "ST54-SE HAL1.0 Version 1.0.14";
 
 pthread_mutex_t mutex;
 

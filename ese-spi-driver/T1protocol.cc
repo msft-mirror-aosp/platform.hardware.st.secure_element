@@ -477,7 +477,7 @@ void T1protocol_processRBlock(Tpdu* originalCmdTpdu,
       STLOG_HAL_D("%s : Need retransmissiom :", __func__);
       gNextCmd = I_block;
     } else {
-      gNextCmd = R_Other_Error;
+      gNextCmd = S_Resync_REQ;
     }
   }
 }
@@ -708,13 +708,13 @@ void T1protocol_updateRecoveryStatus() {
       break;
 
     case RECOVERY_STATUS_RESYNC_1:
-      STLOG_HAL_D("recoveryStatus: RESYNC 1 -> RESYNC 2");
+      STLOG_HAL_D("recoveryStatus: RESYNC 1 -> WARM RESET");
       recoveryStatus = RECOVERY_STATUS_WARM_RESET;
       break;
 
     case RECOVERY_STATUS_WARM_RESET:
       STLOG_HAL_D("recoveryStatus: WARM_RESET (recovery completed)");
-      recoveryStatus = RECOVERY_STATUS_OK;
+      recoveryStatus = RECOVERY_STATUS_KO;
       break;
   }
 }
@@ -868,32 +868,35 @@ int T1protocol_doResyncRequest(Tpdu* lastRespTpduReceived) {
 ** Description      Third thing to do in the recovery mechanism is to send
 **                  a software reset to reset SPI interface.
 **
-** Parameters       lastCmdTpduSent      - Last Tpdu sent
-**                  lastRespTpduReceived - Last response received.
-**                  bytesRead            - If a retransmission occurs, this
-**                  field contains the amount of bytes read from the slave
-**                  in the new transaction.
+** Parameters       lastRespTpduReceived - memory position whre to store the
+**                  response.
 **
 ** Returns          1 if interface reseted, -1 if something failed.
 **
 *******************************************************************************/
-int T1protocol_doSoftReset(Tpdu* lastCmdTpduSent, Tpdu* lastRespTpduReceived,
-                           int* bytesRead) {
+int T1protocol_doSoftReset(Tpdu* lastRespTpduReceived) {
+  Tpdu* TempTpdu = (Tpdu*)malloc(sizeof(Tpdu));
+  TempTpdu->data = (uint8_t*)malloc(ATP.ifsc * sizeof(uint8_t));
   // Form a SBlock Resynch request Tpdu to sent.
   int result = Tpdu_formTpdu(NAD_HOST_TO_SLAVE, SBLOCK_SWRESET_REQUEST_MASK, 0,
-                             NULL, lastCmdTpduSent);
+                             NULL, TempTpdu);
   if (result == -1) {
+    free(TempTpdu->data);
+    free(TempTpdu);
     return -1;
   }
 
   // Send the SBlock and read the response from the slave.
-  result = SpiLayerInterface_transcieveTpdu(lastCmdTpduSent,
-                                            lastRespTpduReceived, DEFAULT_NBWT);
-  if (result <= 0) {
+  result = SpiLayerInterface_transcieveTpdu(TempTpdu, lastRespTpduReceived,
+                                            DEFAULT_NBWT);
+  if (result < 0) {
+    free(TempTpdu->data);
+    free(TempTpdu);
     return -1;
   }
-  *bytesRead = result;
-  return -1;
+  free(TempTpdu->data);
+  free(TempTpdu);
+  return result;
 }
 
 /*******************************************************************************
@@ -934,15 +937,6 @@ int T1protocol_doRecovery() {
     case RECOVERY_STATUS_WARM_RESET:
 
       // At this point, we consider that SE is dead and a reboot is requried
-      // We remove the ATP file to force the driver to read the ATP from the
-      // SPI interface
-      if (remove(ATP_FILE_PATH) == 0) {
-        STLOG_HAL_D("ATP file deleted successfully");
-      } else {
-        STLOG_HAL_D("Error: unable to delete ATP file: %d, %s", errno,
-                    strerror(errno));
-      }
-      STLOG_HAL_D("Soft reset required .");
       gNextCmd = S_SWReset_REQ;
       break;
     case RECOVERY_STATUS_KO:
@@ -1188,6 +1182,13 @@ int T1protocol_transcieveApduPart(uint8_t* cmdApduPart, uint8_t cmdLength,
 
       case S_Resync_REQ:
         rc = T1protocol_doResyncRequest(&lastRespTpduReceived);
+        if (rc < 0) {
+          return rc;
+        }
+        break;
+
+      case S_SWReset_REQ:
+        rc = T1protocol_doSoftReset(&lastRespTpduReceived);
         if (rc < 0) {
           return rc;
         }
