@@ -71,6 +71,7 @@ struct SecureElement : public ISecureElement, public hidl_death_recipient {
   seHalDeInit();
   ESESTATUS seHalInit();
   bool isSeInitialized();
+  void seHalResetSe();
 };
 
 }  // namespace implementation
