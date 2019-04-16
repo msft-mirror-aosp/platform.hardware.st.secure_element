@@ -47,7 +47,7 @@ int pollInterval;
 
 int SpiLayerComm_waitForAtpLength() {
   STLOG_HAL_D("%s : Enter ", __func__);
-  char spiLecture;
+  uint8_t spiLecture;
   struct timeval startTime;
   struct timeval currentTime;
   unsigned int elapsedTimeInMs = 0;
@@ -67,9 +67,9 @@ int SpiLayerComm_waitForAtpLength() {
   }
 
   // Check if ATP length read is OK
-  if ((spiLecture == (char)0x00) || (spiLecture == (char)0xFF)) {
+  if ((spiLecture == 0x00) || (spiLecture == 0xFF)) {
     STLOG_HAL_E("Invalid ATP length read");
-    return -2;
+    return -1;
   }
 
   ATP.len = spiLecture;
@@ -93,14 +93,17 @@ int SpiLayerComm_readAtp() {
   uint8_t i;
   STLOG_HAL_D("%s : Enter ", __func__);
   // Read the ATP length
-  if (SpiLayerComm_waitForAtpLength() != 0) {
-    // Error reading the ATP length
+  if (SpiLayerDriver_reset() != -1) {
+    if (SpiLayerComm_waitForAtpLength() != 0) {
+      return -1;
+    }
+  } else {
     return -1;
   }
 
   // Read the rest of the ATP (ATP.len is already set).
   int atpArrayLength = ATP.len + LEN_LENGTH_IN_ATP;
-  char atpArray[atpArrayLength];
+  uint8_t atpArray[atpArrayLength];
 
   if (SpiLayerDriver_read(atpArray, ATP.len) != ATP.len) {
     STLOG_HAL_E("Error reading the rest of the ATP");
@@ -112,28 +115,14 @@ int SpiLayerComm_readAtp() {
     atpArray[i] = atpArray[i - 1];
   }
   atpArray[LEN_OFFSET_IN_ATP] = ATP.len;
-  char atpHex[atpArrayLength * 3];
-  Utils_charArrayToHexString(atpArray, atpArrayLength, atpHex);
-  STLOG_HAL_D("ATP: %s", atpHex);
+
+  DispHal("Rx", atpArray, ATP.len);
 
   // Set-up the ATP into the corresponding struct
   if (Atp_setAtp(atpArray) != 0) {
     STLOG_HAL_E("Error setting ATP");
     return -1;
   }
-
-  STLOG_HAL_D("Creating ATP file path = %s", ATP_FILE_PATH);
-  FILE* atp_file = fopen(ATP_FILE_PATH, "wb+");
-  if (!atp_file) {
-    STLOG_HAL_E("Error creating ATP file: %d, %s", errno, strerror(errno));
-    // return -1;
-    // Todo should output an error -1
-    return 0;
-  }
-  // Save the ATP array to ATP file
-  fwrite(atpArray, sizeof(atpArray), 1, atp_file);
-  STLOG_HAL_D("ATP file created.");
-  fclose(atp_file);
 
   return 0;
 }
@@ -151,22 +140,25 @@ int SpiLayerComm_readAtp() {
 *******************************************************************************/
 void SpiLayerComm_readAtpFromFile() {
   STLOG_HAL_D("%s : Enter ", __func__);
+
   FILE* atp_file = fopen(ATP_FILE_PATH, "rb");
-  struct stat st;
+  if (atp_file) {
+    struct stat st;
 
-  if (stat(ATP_FILE_PATH, &st) < 0) {
-    STLOG_HAL_E("Error reading ATP file.");
+    if (stat(ATP_FILE_PATH, &st) < 0) {
+      STLOG_HAL_E("Error reading ATP file.");
+    }
+
+    uint8_t atpArray[st.st_size];
+    fread(atpArray, st.st_size, 1, atp_file);
+    // Check if error occurs
+    if (ferror(atp_file)) {
+      STLOG_HAL_E("An error occurred.");
+    }
+
+    // Set-up the ATP into the corresponding struct
+    Atp_setAtp(atpArray);
   }
-
-  char atpArray[st.st_size];
-  fread(atpArray, st.st_size, 1, atp_file);
-  // Check if error occurs
-  if (ferror(atp_file)) {
-    STLOG_HAL_E("An error occurred.");
-  }
-
-  // Set-up the ATP into the corresponding struct
-  Atp_setAtp(atpArray);
 }
 
 /*******************************************************************************
@@ -184,7 +176,7 @@ void SpiLayerComm_readAtpFromFile() {
 
 int SpiLayerComm_writeTpdu(Tpdu* cmdTpdu) {
   int txBufferLength;
-  char txBuffer[TPDU_MAX_LENGTH];
+  uint8_t txBuffer[TPDU_MAX_LENGTH];
   STLOG_HAL_D("%s : Enter ", __func__);
   // Build the tx buffer to allocate the array of bytes to be sent
   switch (ATP.checksumType) {
@@ -197,9 +189,7 @@ int SpiLayerComm_writeTpdu(Tpdu* cmdTpdu) {
   }
 
   // Copy the array of bytes to be sent from the cmdTpdu struct
-  if (Tpdu_toByteArray(cmdTpdu, txBuffer) < 0) {
-    return -1;
-  }
+  Tpdu_toByteArray(cmdTpdu, txBuffer);
 
   // Send the txBuffer through SPI
   if (SpiLayerDriver_write(txBuffer, txBufferLength) != txBufferLength) {
@@ -225,9 +215,8 @@ int SpiLayerComm_writeTpdu(Tpdu* cmdTpdu) {
 **                  -1 otherwise.
 **
 *******************************************************************************/
-
 int SpiLayerComm_waitForResponse(Tpdu* respTpdu, int nBwt) {
-  char pollingRxByte;
+  uint8_t pollingRxByte;
   struct timeval startTime;
   struct timeval currentTime;
 
@@ -247,12 +236,7 @@ int SpiLayerComm_waitForResponse(Tpdu* respTpdu, int nBwt) {
   // Start the polling mechanism
   while (true) {
     // Wait between each polling sequence
-    // nanosleep(pollInterval);
-    // nanosleep((const struct timespec[]){{0, 5000}}, NULL);
     usleep(1000);
-    // pollInterval = 1;
-    // ms_sleep(pollInterval);
-
     // Read the slave response by sending three null bytes
     if (SpiLayerDriver_read(&pollingRxByte, 1) != 1) {
       STLOG_HAL_E("Error reading a valid NAD from the slave.");
@@ -280,7 +264,7 @@ int SpiLayerComm_waitForResponse(Tpdu* respTpdu, int nBwt) {
 
   // If the start of frame has been received continue reading the pending part
   // of the epilogue (PCB and LEN).
-  char buffer[2];
+  uint8_t buffer[2];
   if (SpiLayerDriver_read(buffer, 2) != 2) {
     return -1;
   }
@@ -320,7 +304,7 @@ int SpiLayerComm_readTpdu(Tpdu* respTpdu) {
   }
 
   // Read and store them in a buffer.
-  char rxBuffer[pendingBytes];
+  uint8_t rxBuffer[pendingBytes];
   int bytesRead;
 
   bytesRead = SpiLayerDriver_read(rxBuffer, pendingBytes);

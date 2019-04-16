@@ -66,4 +66,15 @@ int SpiLayerInterface_transcieveTpdu(Tpdu* cmdTpdu, Tpdu* respTpdu,
 
 void SpiLayerInterface_close(void* pDevHandle);
 
+/**
+ * Setup communication to the SE:
+ *  1- Perform a SE reset pulse
+ *  2- Start the polling mechanism to read the ATP from the eSE and set-up the
+ *     atp struct.
+ *  3- Configure the IFSD length with the SE.
+ *
+ * @return 0 if connection could be initialized, -1 otherwise.
+ */
+int SpiLayerInterface_setup();
+
 #endif /* SPILAYERINTERFACE_H_ */

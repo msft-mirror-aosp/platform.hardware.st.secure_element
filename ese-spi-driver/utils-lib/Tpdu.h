@@ -25,6 +25,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "Atp.h"
 
@@ -42,10 +44,10 @@
 
 //************************************ Structs *********************************
 typedef struct {
-  char nad;
-  char pcb;
+  uint8_t nad;
+  uint8_t pcb;
   uint8_t len;
-  char data[254];
+  uint8_t *data;
   uint16_t checksum;
 } Tpdu;
 
@@ -61,9 +63,9 @@ typedef enum { ErrorFree, ChecksumError, OtherErrors } RBlockType;
  * @param structTpdu The TPDU struct to be converted to byte array.
  * @param baTpdu The memory position where to store the formed byte array.
  *
- * @return The length of the formed array, -1 if there is an error.
+ * @return The length of the formed array
  */
-int Tpdu_toByteArray(Tpdu* structTpdu, char* baTpdu);
+uint16_t Tpdu_toByteArray(Tpdu *structTpdu, uint8_t *baTpdu);
 
 /**
  * Checks that the checksum in the TPDU is as expected.
@@ -72,7 +74,7 @@ int Tpdu_toByteArray(Tpdu* structTpdu, char* baTpdu);
  *
  * @return true if checksum is ok, false otherwise.
  */
-bool Tpdu_isChecksumOk(Tpdu* tpdu);
+bool Tpdu_isChecksumOk(Tpdu *tpdu);
 
 /**
  * Forms a TPDU with the specified fields.
@@ -85,7 +87,8 @@ bool Tpdu_isChecksumOk(Tpdu* tpdu);
  *
  * @return 0 if everything went ok, -1 otherwise.
  */
-int Tpdu_formTpdu(char nad, char pcb, uint8_t len, char* data, Tpdu* tpdu);
+int Tpdu_formTpdu(uint8_t nad, uint8_t pcb, uint8_t len, uint8_t *data,
+                  Tpdu *tpdu);
 
 /**
  * Returns the checksum value in the form of a byte array.
@@ -93,7 +96,7 @@ int Tpdu_formTpdu(char nad, char pcb, uint8_t len, char* data, Tpdu* tpdu);
  * @param tpdu The TPDU struct from where to get the checksum value.
  * @param checksumBytes The memory position where to store the result.
  */
-void Tpdu_getChecksumBytes(Tpdu* tpdu, char* checksumBytes);
+void Tpdu_getChecksumBytes(Tpdu *tpdu, uint8_t *checksumBytes);
 
 /**
  * Gets the value of the checksum stored in the array.
@@ -103,7 +106,7 @@ void Tpdu_getChecksumBytes(Tpdu* tpdu, char* checksumBytes);
  *
  * @return The value of the checksum.
  */
-uint16_t Tpdu_getChecksumValue(char* array, int checksumStartPosition,
+uint16_t Tpdu_getChecksumValue(uint8_t *array, int checksumStartPosition,
                                ChecksumType checksumType);
 
 /**
@@ -113,7 +116,17 @@ uint16_t Tpdu_getChecksumValue(char* array, int checksumStartPosition,
  *
  * @return The TPDU type of the tpdu.
  */
-TpduType Tpdu_getType(Tpdu* tpdu);
+TpduType Tpdu_getType(Tpdu *tpdu);
+
+/**
+ * Copy Tpdu Struct.
+ *
+ * @param     dest
+ *            src
+ *
+ * @return void
+ */
+void Tpdu_copy(Tpdu *dest, Tpdu *src);
 
 /**
  * Converts a TPDU into a hex string.
@@ -121,6 +134,6 @@ TpduType Tpdu_getType(Tpdu* tpdu);
  * @param tpdu The TPDU to be converted to a string.
  * @param hexStringBuffer The output buffer.
  */
-void Tpdu_toHexString(Tpdu* tpdu, char* hexStringBuffer);
+void Tpdu_toHexString(Tpdu *tpdu, uint8_t *hexStringBuffer);
 
 #endif /* TPDU_H_ */

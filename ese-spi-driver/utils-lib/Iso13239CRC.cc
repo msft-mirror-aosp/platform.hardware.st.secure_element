@@ -32,14 +32,14 @@
 ** Returns       CRC of the data. -1 if something went wrong.
 **
 *******************************************************************************/
-uint16_t computeCrc(char* data, int len) {
+uint16_t computeCrc(uint8_t *data, int len) {
   uint16_t tempCrc;
 
   tempCrc = (unsigned short)CRC_PRESET;
 
   int i, k;
   for (i = 0; i < len; i++) {
-    tempCrc = tempCrc ^ ((unsigned short)(unsigned char)data[i]);
+    tempCrc = tempCrc ^ ((unsigned short)data[i]);
     for (k = 0; k < 8; k++) {
       if ((tempCrc & 0x0001) == 0x0001) {
         tempCrc = (tempCrc >> 1) ^ CRC_POLYNOMIAL;
@@ -49,8 +49,8 @@ uint16_t computeCrc(char* data, int len) {
     }
   }
   tempCrc = ~tempCrc;
-  data[len] = (unsigned char)tempCrc;
-  data[len + 1] = (unsigned char)(tempCrc >> 8);
+  data[len] = (uint8_t)tempCrc;
+  data[len + 1] = (uint8_t)(tempCrc >> 8);
 
   return tempCrc;
 }

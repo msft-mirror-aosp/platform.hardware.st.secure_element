@@ -1,10 +1,11 @@
 /******************************************************************************
  *
+ *  Copyright 2018 NXP
  *  Copyright (C) 2018 ST Microelectronics S.A.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at:
+ *  You may obtain a copy of the License at
  *
  *  http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -14,29 +15,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- *
  ******************************************************************************/
-#ifndef ISO13239CRC_H_
-#define ISO13239CRC_H_
+#ifndef _DATAMGMT_H_
+#define _DATAMGMT_H_
+#include <Tpdu.h>
 
-//************************************ Defines *********************************
-#define CRC_PRESET 0xFFFF
-#define CRC_POLYNOMIAL 0x8408
+typedef struct TpduRecvBuff_List {
+  /* buffer to be used to store the received payload */
+  Tpdu tData;
+  /* pointer to the next node present in lined list*/
+  struct TpduRecvBuff_List* pNext;
+} TpduRecvBuff_List_t;
 
-#include <stdint.h>
+int DataMgmt_GetData(uint16_t* data_len, uint8_t** pbuff);
+int DataMgmt_StoreDataInList(uint16_t data_len, uint8_t* pbuff);
 
-//************************************ Structs *********************************
-
-//************************************ Functions *******************************
-
-/**
- * Computes the 16-bit CRC of the specified function.
- *
- * @param data The data to compute the CRC over.
- * @param len The length of the data.
- *
- * @return The CRC of the data. -1 if something went wrong.
- */
-uint16_t computeCrc(uint8_t *data, int len);
-
-#endif /* ISO13239CRC_H_ */
+#endif /* _DATAMGMT_H_ */

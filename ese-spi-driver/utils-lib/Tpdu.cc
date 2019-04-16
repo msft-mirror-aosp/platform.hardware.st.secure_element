@@ -34,7 +34,7 @@
 ** Returns        length of the formed array, -1 if there is an error.
 **
 *******************************************************************************/
-int Tpdu_toByteArray(Tpdu* structTpdu, char* baTpdu) {
+uint16_t Tpdu_toByteArray(Tpdu *structTpdu, uint8_t *baTpdu) {
   // NAD - Copy the nad into the nad array position
   baTpdu[NAD_OFFSET_IN_TPDU] = structTpdu->nad;
 
@@ -53,8 +53,8 @@ int Tpdu_toByteArray(Tpdu* structTpdu, char* baTpdu) {
   // Compute where the checksum shall be stored.
   uint16_t checksumOffsetInTpdu = DATA_OFFSET_IN_TPDU + structTpdu->len;
 
-  int length;
-  char checksum[2];
+  uint16_t length;
+  uint8_t checksum[2];
   switch (ATP.checksumType) {
     case LRC:
       Tpdu_getChecksumBytes(structTpdu, checksum);
@@ -62,6 +62,7 @@ int Tpdu_toByteArray(Tpdu* structTpdu, char* baTpdu) {
       length = checksumOffsetInTpdu + 1;
       break;
     case CRC:
+    default:
       Tpdu_getChecksumBytes(structTpdu, checksum);
       baTpdu[checksumOffsetInTpdu] = checksum[0];
       baTpdu[checksumOffsetInTpdu + 1] = checksum[1];
@@ -83,19 +84,19 @@ int Tpdu_toByteArray(Tpdu* structTpdu, char* baTpdu) {
 ** Returns        true if checksum is ok, false otherwise.
 **
 *******************************************************************************/
-bool Tpdu_isChecksumOk(Tpdu* tpdu) {
+bool Tpdu_isChecksumOk(Tpdu *tpdu) {
   switch (ATP.checksumType) {
     case LRC:
       // TODO: implement
-      return -1;
+      return false;
     case CRC:;
-      char buffer[TPDU_MAX_LENGTH];
+      uint8_t buffer[TPDU_MAX_LENGTH];
       Tpdu_toByteArray(tpdu, buffer);
       if (tpdu->checksum ==
           computeCrc(buffer, (TPDU_PROLOGUE_LENGTH + tpdu->len))) {
-        return 0;
+        return true;
       } else {
-        return -1;
+        return false;
       }
   }
 }
@@ -115,9 +116,13 @@ bool Tpdu_isChecksumOk(Tpdu* tpdu) {
 ** Returns         0 if everything went ok, -1 otherwise.
 **
 *******************************************************************************/
-int Tpdu_formTpdu(char nad, char pcb, uint8_t len, char* data, Tpdu* tpdu) {
+int Tpdu_formTpdu(uint8_t nad, uint8_t pcb, uint8_t len, uint8_t *data,
+                  Tpdu *tpdu) {
   uint8_t i;
 
+  if (len > TPDU_MAX_DATA_LENGTH) {
+    return -1;
+  }
   // NAD - Copy the incoming nad into the tpdu nad
   tpdu->nad = nad;
   // PCB - Copy the incoming pcb into the tpdu pcb
@@ -143,7 +148,7 @@ int Tpdu_formTpdu(char nad, char pcb, uint8_t len, char* data, Tpdu* tpdu) {
       tpdu->checksum = 0;
 
       // Create a buffer to store the tpdu to compute the CRC.
-      char buffer[TPDU_MAX_LENGTH];
+      uint8_t buffer[TPDU_MAX_LENGTH];
       Tpdu_toByteArray(tpdu, buffer);
 
       // Calculate the crc
@@ -166,14 +171,14 @@ int Tpdu_formTpdu(char nad, char pcb, uint8_t len, char* data, Tpdu* tpdu) {
 ** Returns         void
 **
 *******************************************************************************/
-void Tpdu_getChecksumBytes(Tpdu* tpdu, char* checksumBytes) {
+void Tpdu_getChecksumBytes(Tpdu *tpdu, uint8_t *checksumBytes) {
   switch (ATP.checksumType) {
     case LRC:
-      checksumBytes[0] = (char)tpdu->checksum;
+      checksumBytes[0] = (uint8_t)tpdu->checksum;
       break;
     case CRC:
-      checksumBytes[0] = (char)tpdu->checksum;
-      checksumBytes[1] = (char)(tpdu->checksum >> 8);
+      checksumBytes[0] = (uint8_t)tpdu->checksum;
+      checksumBytes[1] = (uint8_t)(tpdu->checksum >> 8);
       break;
   }
 }
@@ -191,14 +196,14 @@ void Tpdu_getChecksumBytes(Tpdu* tpdu, char* checksumBytes) {
 ** Returns         checksum value
 **
 *******************************************************************************/
-uint16_t Tpdu_getChecksumValue(char* array, int checksumStartPosition,
+uint16_t Tpdu_getChecksumValue(uint8_t *array, int checksumStartPosition,
                                ChecksumType checksumType) {
   switch (checksumType) {
     case LRC:
       return (uint16_t)array[checksumStartPosition];
     case CRC:
-      return (uint16_t)((unsigned char)array[checksumStartPosition + 1] << 8) |
-             (unsigned char)array[checksumStartPosition];
+      return (uint16_t)(array[checksumStartPosition + 1] << 8) |
+             array[checksumStartPosition];
   }
 }
 
@@ -213,13 +218,38 @@ uint16_t Tpdu_getChecksumValue(char* array, int checksumStartPosition,
 ** Returns         TPDU type (I-Block, R-Block or S-Block)
 **
 *******************************************************************************/
-TpduType Tpdu_getType(Tpdu* tpdu) {
+TpduType Tpdu_getType(Tpdu *tpdu) {
   if ((tpdu->pcb & 0x80) == 0x00) {
     return IBlock;
   } else if ((tpdu->pcb & 0xC0) == 0x80) {
     return RBlock;
   } else {
     return SBlock;
+  }
+}
+
+/*******************************************************************************
+**
+** Function        Tpdu_copy
+**
+** Description     Copy a Tpdu Struct to an another one.
+**
+** Parameters      dest   - the destination tpdu
+**                 src    - the tpdu to be copied
+**
+** Returns         void
+**
+*******************************************************************************/
+void Tpdu_copy(Tpdu *dest, Tpdu *src) {
+  dest->checksum = src->checksum;
+  dest->len = src->len;
+  dest->nad = src->nad;
+  dest->pcb = src->pcb;
+  if (dest->data == NULL) {
+    dest->data = (uint8_t *)malloc(ATP.ifsc * sizeof(uint8_t));
+  }
+  if (((src->len) > 0) && ((src->len) < ATP.ifsc)) {
+    memcpy(dest->data, src->data, src->len);
   }
 }
 
@@ -236,12 +266,12 @@ TpduType Tpdu_getType(Tpdu* tpdu) {
 ** Returns         void
 **
 *******************************************************************************/
-void Tpdu_toHexString(Tpdu* tpdu, char* hexStringBuffer) {
-  char buffer[tpdu->len + 5];
-  int length = Tpdu_toByteArray(tpdu, buffer);
-  char* ptr = hexStringBuffer;
+void Tpdu_toHexString(Tpdu *tpdu, uint8_t *hexStringBuffer) {
+  uint8_t buffer[tpdu->len + 5];
+  uint16_t length = Tpdu_toByteArray(tpdu, buffer);
+  char *ptr = (char *)hexStringBuffer;
   int i;
   for (i = 0; i < length; i++) {
-    ptr += sprintf(ptr, "%02X ", buffer[i]);
+    ptr += sprintf(ptr, "%02X ", (char)buffer[i]);
   }
 }

@@ -35,7 +35,7 @@ struct timeval lastRxTxTime;
 **
 ** Parameters       spiDevPath - Spi device path.
 **
-** Returns          0 if everything is ok, -1 otherwise.
+** Returns          the file descriptor if everything is ok, -1 otherwise.
 **
 *******************************************************************************/
 int SpiLayerDriver_open(char* spiDevPath) {
@@ -43,14 +43,14 @@ int SpiLayerDriver_open(char* spiDevPath) {
   STLOG_HAL_D("%s : Enter ", __func__);
   // Open the master spi device and save the spi device identifier
   spiDeviceId = open(spiDeviceName, O_RDWR | O_NOCTTY);
-  STLOG_HAL_D(" spiDeviceId: %d", spiDeviceId);
+  STLOG_HAL_V(" spiDeviceId: %d", spiDeviceId);
   if (spiDeviceId < 0) {
     return -1;
   }
   currentMode = MODE_RX;
   gettimeofday(&lastRxTxTime, 0);
 
-  return 0;
+  return spiDeviceId;
 }
 
 /*******************************************************************************
@@ -83,7 +83,7 @@ void SpiLayerDriver_close() {
 **                  failed.
 **
 *******************************************************************************/
-int SpiLayerDriver_read(char* rxBuffer, unsigned int bytesToRead) {
+int SpiLayerDriver_read(uint8_t* rxBuffer, unsigned int bytesToRead) {
   if (currentMode != MODE_RX) {
     currentMode = MODE_RX;
     STLOG_HAL_V(" Last TX: %ld,%ld", lastRxTxTime.tv_sec, lastRxTxTime.tv_usec);
@@ -121,7 +121,7 @@ int SpiLayerDriver_read(char* rxBuffer, unsigned int bytesToRead) {
 **                  failed.
 **
 *******************************************************************************/
-int SpiLayerDriver_write(char* txBuffer, unsigned int txBufferLength) {
+int SpiLayerDriver_write(uint8_t* txBuffer, unsigned int txBufferLength) {
   if (currentMode != MODE_TX) {
     currentMode = MODE_TX;
     STLOG_HAL_V(" Last RX: %ld,%ld", lastRxTxTime.tv_sec, lastRxTxTime.tv_usec);
@@ -137,10 +137,25 @@ int SpiLayerDriver_write(char* txBuffer, unsigned int txBufferLength) {
     gettimeofday(&currentTime, 0);
     STLOG_HAL_V("Start TX: %ld,%ld", currentTime.tv_sec, currentTime.tv_usec);
   }
-  char hexString[txBufferLength * 3];
-  Utils_charArrayToHexString(txBuffer, txBufferLength, hexString);
-  STLOG_HAL_D("SpiLayerDriver_write: spiTx > %s", hexString);
+
+  DispHal("Tx", txBuffer, txBufferLength);
+
   int rc = write(spiDeviceId, txBuffer, txBufferLength);
   gettimeofday(&lastRxTxTime, 0);
   return rc;
+}
+
+/*******************************************************************************
+**
+** Function         SpiLayerDriver_reset
+**
+** Description      Send a Reset pulse to the eSE.
+**
+** Parameters       none
+**
+** Returns          O if success, -1 otherwise
+**
+*******************************************************************************/
+int SpiLayerDriver_reset() {
+  return ioctl(spiDeviceId, ST54J_SE_PULSE_RESET, NULL);
 }

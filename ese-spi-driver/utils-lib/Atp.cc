@@ -23,6 +23,7 @@
 
 Atp ATP = {.bwt = 0x0690, .checksumType = CRC, .ifsc = 0xFE};
 
+uint8_t gATP[40];
 //************************************ Functions *******************************
 
 /*******************************************************************************
@@ -37,9 +38,9 @@ Atp ATP = {.bwt = 0x0690, .checksumType = CRC, .ifsc = 0xFE};
 ** Returns          checksum value
 **
 *******************************************************************************/
-uint16_t Atp_getChecksumValue(char* array, int checksumStartPosition) {
-  return (uint16_t)((unsigned char)array[checksumStartPosition + 1] << 8) |
-         (unsigned char)array[checksumStartPosition];
+uint16_t Atp_getChecksumValue(uint8_t *array, int checksumStartPosition) {
+  return (uint16_t)((uint8_t)array[checksumStartPosition + 1] << 8) |
+         (uint8_t)array[checksumStartPosition];
 }
 
 /*******************************************************************************
@@ -53,12 +54,16 @@ uint16_t Atp_getChecksumValue(char* array, int checksumStartPosition) {
 ** Returns          0 If everything is Ok, -1 otherwise.
 **
 *******************************************************************************/
-int Atp_setAtp(char* baAtp) {
+int Atp_setAtp(uint8_t *baAtp) {
   uint8_t i;
   Atp tmpAtp;
 
   // Length
   tmpAtp.len = (uint8_t)baAtp[LEN_OFFSET_IN_ATP];
+
+  if (tmpAtp.len) {
+    memcpy(gATP, baAtp, tmpAtp.len);
+  }
 
   tmpAtp.checksum = Atp_getChecksumValue(baAtp, CHECKSUM_OFFSET_IN_ATP);
 
@@ -120,3 +125,15 @@ int Atp_setAtp(char* baAtp) {
   ATP = tmpAtp;
   return 0;
 }
+
+/*******************************************************************************
+**
+** Function         Atp_getAtp
+**
+** Description     Gets the ATP stored.
+**
+**
+** Returns          pointer to the ATP array
+**
+*******************************************************************************/
+uint8_t *Atp_getAtp() { return &gATP[0]; }

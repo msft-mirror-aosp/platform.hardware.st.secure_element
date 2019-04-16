@@ -18,6 +18,8 @@
  ******************************************************************************/
 #define LOG_TAG "StEse-SpiLayerInterface"
 #include "SpiLayerInterface.h"
+#include <errno.h>
+#include <string.h>
 #include <sys/time.h>
 #include "SpiLayerComm.h"
 #include "SpiLayerDriver.h"
@@ -29,6 +31,8 @@
 #define SPI_MODE SPI_MODE_0
 
 #define KHZ_TO_HZ 1000
+
+static bool mFirstActivation = false;
 
 /*******************************************************************************
 **
@@ -46,40 +50,22 @@ int SpiLayerInterface_init(SpiDriver_config_t* tSpiDriver) {
 
   // Configure the SPI before start the data exchange with the eSE
   char* spiDevPath = tSpiDriver->pDevName;
-  if (SpiLayerDriver_open(spiDevPath) != 0) {
+
+  int DevHandle = SpiLayerDriver_open(spiDevPath);
+  tSpiDriver->pDevHandle = (void*)((intptr_t)DevHandle);
+  if (DevHandle == -1) {
     // Error configuring the SPI bus
     STLOG_HAL_E("Error configuring the SPI bus.");
     return -1;
   }
-  // Check if ATP file exists
-  // If it exists, it means that ATP was previously read and hence we do not
-  // need to read it again
-  if (fopen(ATP_FILE_PATH, "rb")) {
-    STLOG_HAL_V("ATP file exists.");
-    // ATP is stored in the file: load the config from the file and return.
-    SpiLayerComm_readAtpFromFile();
-    return 0;
+
+  if (!mFirstActivation) {
+    if (SpiLayerInterface_setup() == -1) {
+      return -1;
+    }
+    mFirstActivation = true;
+    STLOG_HAL_D("SPI bus working at ATP.msf =  %i KHz", ATP.msf);
   }
-
-  // First of all, read the ATP from the slave
-  if (SpiLayerComm_readAtp() != 0) {
-    // Error reading the ATP
-    STLOG_HAL_E("Error reading the ATP.");
-    return -1;
-  }
-
-  STLOG_HAL_D("SPI bus working at ATP.msf =  %i KHz", ATP.msf);
-  /*  if(ATP.msf < actualFreq) {
-        actualFreq = ATP.msf;
-        if(SpiLayerDriver_setMaxFreqSpeed(actualFreq * KHZ_TO_HZ) != 0) {
-            ALOGE("Error setting frequency.");
-            return -1;
-        }
-    }*/
-
-  // pollInterval = PreferenceHelper_getPollInterval();
-  // ALOGD(TAG, "Poll interval read from preferences: %d nanoseconds",
-  // pollInterval);
 
   STLOG_HAL_D("SPI Driver interface initialized.");
   return 0;
@@ -130,9 +116,11 @@ int SpiLayerInterface_transcieveTpdu(Tpdu* cmdTpdu, Tpdu* respTpdu,
   }
   STLOG_HAL_D("%d bytes read from SPI interface", bytesRead);
 
-  char respTpduHexString[(5 + respTpdu->len) * 3];
-  Tpdu_toHexString(respTpdu, respTpduHexString);
-  STLOG_HAL_D("spiRx < %s", respTpduHexString);
+  uint8_t buffer[(5 + respTpdu->len)];
+  uint16_t length = Tpdu_toByteArray(respTpdu, buffer);
+  if (length > 0) {
+    DispHal("Rx", buffer, length);
+  }
   return bytesRead;
 }
 
@@ -152,4 +140,29 @@ void SpiLayerInterface_close(void* pDevHandle) {
     STLOG_HAL_D("SpiLayerInterface_close");
     SpiLayerDriver_close();
   }
+}
+/*******************************************************************************
+**
+** Function         SpiLayerInterface_setup
+**
+** Description      Read the ATP by performing SE reset and negotiate the IFSD.
+**
+** Parameters       pDevHandle - device handle
+**
+** Returns          0 if connection could be initialized, -1 otherwise.
+**
+*******************************************************************************/
+int SpiLayerInterface_setup() {
+  // First of all, read the ATP from the slave
+  if (SpiLayerComm_readAtp() != 0) {
+    // Error reading the ATP
+    STLOG_HAL_E("Error reading the ATP.");
+    return -1;
+  }
+  T1protocol_resetSequenceNumbers();
+  // Negotiate IFS value
+  if (T1protocol_doRequestIFS() != 0) {
+    return -1;
+  }
+  return 0;
 }
