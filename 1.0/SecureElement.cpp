@@ -24,6 +24,8 @@
 #include "SecureElement.h"
 
 extern bool ese_debug_enabled;
+static bool OpenLogicalChannelProcessing = false;
+static bool OpenBasicChannelProcessing = false;
 
 namespace android {
 namespace hardware {
@@ -116,7 +118,7 @@ Return<void> SecureElement::openLogicalChannel(const hidl_vec<uint8_t>& aid,
                                                uint8_t p2,
                                                openLogicalChannel_cb _hidl_cb) {
   hidl_vec<uint8_t> manageChannelCommand = {0x00, 0x70, 0x00, 0x00, 0x01};
-
+  OpenLogicalChannelProcessing = true;
   LogicalChannelResponse resApduBuff;
   resApduBuff.channelNumber = 0xff;
   memset(&resApduBuff, 0x00, sizeof(resApduBuff));
@@ -128,6 +130,7 @@ Return<void> SecureElement::openLogicalChannel(const hidl_vec<uint8_t>& aid,
     if (status != ESESTATUS_SUCCESS) {
       ALOGE("%s: seHalInit Failed!!!", __func__);
       _hidl_cb(resApduBuff, SecureElementStatus::IOERROR);
+      OpenLogicalChannelProcessing = false;
       return Void();
     }
   }
@@ -180,6 +183,7 @@ Return<void> SecureElement::openLogicalChannel(const hidl_vec<uint8_t>& aid,
     send the callback and return*/
     _hidl_cb(resApduBuff, sestatus);
     ALOGE("%s: Exit - manage channel failed!!", __func__);
+    OpenLogicalChannelProcessing = false;
     return Void();
   }
 
@@ -248,6 +252,7 @@ Return<void> SecureElement::openLogicalChannel(const hidl_vec<uint8_t>& aid,
   free(cmdApdu.p_data);
   free(rspApdu.p_data);
   ALOGV("%s: Exit", __func__);
+  OpenLogicalChannelProcessing = false;
   return Void();
 }
 
@@ -255,7 +260,7 @@ Return<void> SecureElement::openBasicChannel(const hidl_vec<uint8_t>& aid,
                                              uint8_t p2,
                                              openBasicChannel_cb _hidl_cb) {
   hidl_vec<uint8_t> result;
-
+  OpenBasicChannelProcessing = true;
   ALOGD("%s: Enter", __func__);
 
   if (!isSeInitialized()) {
@@ -263,6 +268,7 @@ Return<void> SecureElement::openBasicChannel(const hidl_vec<uint8_t>& aid,
     if (status != ESESTATUS_SUCCESS) {
       ALOGE("%s: seHalInit Failed!!!", __func__);
       _hidl_cb(result, SecureElementStatus::IOERROR);
+      OpenBasicChannelProcessing = false;
       return Void();
     }
   }
@@ -335,6 +341,7 @@ Return<void> SecureElement::openBasicChannel(const hidl_vec<uint8_t>& aid,
   free(cmdApdu.p_data);
   free(rspApdu.p_data);
   ALOGV("%s: Exit", __func__);
+  OpenBasicChannelProcessing = false;
   return Void();
 }
 
@@ -386,7 +393,8 @@ SecureElement::closeChannel(uint8_t channelNumber) {
     mOpenedChannels[channelNumber] = false;
     mOpenedchannelCount--;
     /*If there are no channels remaining close secureElement*/
-    if (mOpenedchannelCount == 0) {
+    if ((mOpenedchannelCount == 0) && !OpenLogicalChannelProcessing &&
+        !OpenBasicChannelProcessing) {
       sestatus = seHalDeInit();
     } else {
       sestatus = SecureElementStatus::SUCCESS;
