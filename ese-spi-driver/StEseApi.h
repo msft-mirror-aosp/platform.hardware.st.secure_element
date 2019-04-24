@@ -120,4 +120,16 @@ bool StEseApi_isOpen();
  */
 uint8_t* StEse_getAtr(void);
 
+/**
+ * StEse_Reset
+ *
+ * This function get the last ATR received.
+ *
+ * @param    void
+ *
+ * @return   ESESTATUS_SUCCESS is successful, ESESTATUS_SUCCESS otherwise
+ *
+ */
+ESESTATUS StEse_Reset(void);
+
 #endif /* _STESEAPI_H_ */
