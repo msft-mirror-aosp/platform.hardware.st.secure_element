@@ -31,7 +31,7 @@
 /* ESE Context structure */
 ese_Context_t ese_ctxt;
 
-const char* halVersion = "ST54-SE HAL1.0 Version 1.0.14";
+const char* halVersion = "ST54-SE HAL1.0 Version 1.0.15";
 
 pthread_mutex_t mutex;
 
@@ -236,4 +236,22 @@ ESESTATUS StEse_close(void) {
 uint8_t* StEse_getAtr(void) {
   STLOG_HAL_D("%s : Enter", __func__);
   return Atp_getAtp();
+}
+
+/******************************************************************************
+ * Function         StEse_Reset
+ *
+ * Description      This function resets the eSE SPI interface by sending a
+ *                  SE reset and negotiating the ifs.
+ *
+ * Returns          ESESTATUS_SUCCESS is successful, ESESTATUS_SUCCESS otherwise
+ *
+ ******************************************************************************/
+ESESTATUS StEse_Reset(void) {
+  STLOG_HAL_D("%s : Enter", __func__);
+  if (SpiLayerInterface_setup() != 0) {
+    return ESESTATUS_FAILED;
+  }
+
+  return ESESTATUS_SUCCESS;
 }
