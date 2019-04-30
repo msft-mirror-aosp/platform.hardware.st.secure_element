@@ -35,7 +35,7 @@ using android::hardware::secure_element::V1_0::implementation::SecureElement;
 int main() {
   ALOGD("Secure Element HAL Service 1.0 is starting.");
   sp<ISecureElement> se_service = new SecureElement();
-  configureRpcThreadpool(2, true /*callerWillJoin*/);
+  configureRpcThreadpool(1, true /*callerWillJoin*/);
   status_t status = se_service->registerAsService("eSE1");
   if (status != OK) {
     LOG_ALWAYS_FATAL(
