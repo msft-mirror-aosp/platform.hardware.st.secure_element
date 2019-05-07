@@ -31,7 +31,7 @@
 /* ESE Context structure */
 ese_Context_t ese_ctxt;
 
-const char* halVersion = "ST54-SE HAL1.0 Version 1.0.18";
+const char* halVersion = "ST54-SE HAL1.0 Version 1.0.19";
 
 pthread_mutex_t mutex;
 
@@ -227,12 +227,13 @@ ESESTATUS StEse_close(void) {
  *
  * Description      This function get the last ATR received.
  *
- * Returns          pointer to the ATP array.
+ * Returns          pointer to the ATR array.
  *
  ******************************************************************************/
 uint8_t* StEse_getAtr(void) {
   STLOG_HAL_D("%s : Enter", __func__);
-  return Atp_getAtp();
+  // The ATR is not supported by SPI in the secure element
+  return nullptr;
 }
 
 /******************************************************************************
