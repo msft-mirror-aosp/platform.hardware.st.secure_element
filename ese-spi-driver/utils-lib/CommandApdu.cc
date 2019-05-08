@@ -34,6 +34,10 @@
 int CommandApdu_toByteArray(CommandApdu cmdApdu, char* commandApduArray) {
   int commandApduArraySize = CommandApdu_getSize(cmdApdu);
 
+  if (cmdApdu.lc > MAX_CMD_APDU_DATA_LENGTH) {
+    return -1;
+  }
+
   commandApduArray[0] = cmdApdu.cla;
   commandApduArray[1] = cmdApdu.ins;
   commandApduArray[2] = cmdApdu.p1;
@@ -91,12 +95,18 @@ int CommandApdu_getSize(CommandApdu cmdApdu) {
 *******************************************************************************/
 int CommandApdu_formApduType4(char cla, char ins, char p1, char p2, char lc,
                               char* cmdData, char le, CommandApdu* cmdApdu) {
+  if (lc > MAX_CMD_APDU_DATA_LENGTH) {
+    return -1;
+  }
+
   cmdApdu->cla = cla;
   cmdApdu->ins = ins;
   cmdApdu->p1 = p1;
   cmdApdu->p2 = p2;
   cmdApdu->lc = lc;
-  memcpy(cmdApdu->data, cmdData, lc);
+  if (lc > 0) {
+    memcpy(cmdApdu->data, cmdData, lc);
+  }
   cmdApdu->le = le;
 
   return CommandApdu_getSize(*cmdApdu);
