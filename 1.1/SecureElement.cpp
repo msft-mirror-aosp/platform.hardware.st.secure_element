@@ -103,12 +103,14 @@ Return<void> SecureElement::init_1_1(
 Return<void> SecureElement::getAtr(getAtr_cb _hidl_cb) {
   ALOGD("%s: Enter", __func__);
   hidl_vec<uint8_t> response;
-  uint8_t* ATP;
-  ATP = StEse_getAtr();
-  uint8_t len = *ATP;
-  if (len) {
-    response.resize(len);
-    memcpy(&response[0], ATP, len);
+  uint8_t* ATR;
+  ATR = StEse_getAtr();
+  if (ATR != nullptr) {
+    uint8_t len = *ATR;
+    if (len) {
+      response.resize(len);
+      memcpy(&response[0], ATR, len);
+    }
   }
   _hidl_cb(response);
   return Void();
