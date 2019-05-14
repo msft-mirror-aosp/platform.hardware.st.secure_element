@@ -419,18 +419,19 @@ void T1protocol_updateSlaveSequenceNumber() {
 ** Parameters       originalCmdTpdu       - Original Tpdu sent.
 **                  lastRespTpduReceived  - Last response from the slave.
 **
+** Returns          0 If all went is ok, -1 otherwise.
 **
 *******************************************************************************/
-void T1protocol_processIBlock(Tpdu* originalCmdTpdu,
-                              Tpdu* lastRespTpduReceived) {
+int T1protocol_processIBlock(Tpdu* originalCmdTpdu,
+                             Tpdu* lastRespTpduReceived) {
   // The last IBlock received was the good one. Update the sequence
   // numbers needed.
-
+  int rc = 0;
   TpduType type = Tpdu_getType(originalCmdTpdu);
 
   T1protocol_updateSlaveSequenceNumber();
-  DataMgmt_StoreDataInList(lastRespTpduReceived->len,
-                           lastRespTpduReceived->data);
+  rc = DataMgmt_StoreDataInList(lastRespTpduReceived->len,
+                                lastRespTpduReceived->data);
 
   if ((lastRespTpduReceived->pcb & IBLOCK_M_BIT_MASK) > 0) {
     gNextCmd = R_ACK;
@@ -440,6 +441,7 @@ void T1protocol_processIBlock(Tpdu* originalCmdTpdu,
     }
     gNextCmd = Idle;
   }
+  return rc;
 }
 
 /*******************************************************************************
@@ -995,7 +997,7 @@ int T1protocol_handleTpduResponse(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
   TpduType type = Tpdu_getType(lastRespTpduReceived);
   switch (type) {
     case IBlock:
-      T1protocol_processIBlock(originalCmdTpdu, lastRespTpduReceived);
+      rc = T1protocol_processIBlock(originalCmdTpdu, lastRespTpduReceived);
       break;
 
     case RBlock:
@@ -1213,8 +1215,11 @@ int T1protocol_transcieveApduPart(uint8_t* cmdApduPart, uint8_t cmdLength,
       return rc;
     }
   }
+  TpduType type = Tpdu_getType(&lastRespTpduReceived);
 
-  DataMgmt_GetData(&pRes.len, &pRes.p_data);
+  if ((type == IBlock) && (DataMgmt_GetData(&pRes.len, &pRes.p_data) != 0)) {
+    return -1;
+  }
 
   pRsp->len = pRes.len;
   pRsp->p_data = pRes.p_data;
