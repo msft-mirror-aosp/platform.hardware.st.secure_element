@@ -180,9 +180,9 @@ void T1protocol_updateSlaveSequenceNumber();
  * @param originalCmdTpdu Original Tpdu sent.
  * @param lastRespTpduReceived Last response received from the slave.
  *
+ * @return 0 If all went is ok, -1 otherwise.
  */
-void T1protocol_processIBlock(Tpdu *originalCmdTpdu,
-                              Tpdu *lastRespTpduReceived);
+int T1protocol_processIBlock(Tpdu* originalCmdTpdu, Tpdu* lastRespTpduReceived);
 
 /**
  * Process the last RBlock received from the slave.

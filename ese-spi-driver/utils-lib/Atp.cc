@@ -23,7 +23,7 @@
 
 Atp ATP = {.bwt = 0x0690, .checksumType = CRC, .ifsc = 0xFE};
 
-uint8_t gATP[40];
+uint8_t gATP[ATP_MAX_ALLOWED_LENGTH];
 //************************************ Functions *******************************
 
 /*******************************************************************************
@@ -61,10 +61,10 @@ int Atp_setAtp(uint8_t *baAtp) {
   // Length
   tmpAtp.len = (uint8_t)baAtp[LEN_OFFSET_IN_ATP];
 
-  if (tmpAtp.len) {
-    memcpy(gATP, baAtp, tmpAtp.len);
+  if (tmpAtp.len > ATP_MAX_ALLOWED_LENGTH) {
+    return -1;
   }
-
+  memcpy(gATP, baAtp, tmpAtp.len);
   tmpAtp.checksum = Atp_getChecksumValue(baAtp, CHECKSUM_OFFSET_IN_ATP);
 
   // Check CRC
