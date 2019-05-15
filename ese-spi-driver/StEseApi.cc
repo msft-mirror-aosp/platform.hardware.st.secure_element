@@ -31,7 +31,7 @@
 /* ESE Context structure */
 ese_Context_t ese_ctxt;
 
-const char* halVersion = "ST54-SE HAL1.0 Version 1.0.17";
+const char* halVersion = "ST54-SE HAL1.0 Version 1.0.19";
 
 pthread_mutex_t mutex;
 
@@ -155,9 +155,6 @@ ESESTATUS StEse_Transceive(StEse_data* pCmd, StEse_data* pRsp) {
 
   STLOG_HAL_D(" %s ESE - Access granted, processing \n", __FUNCTION__);
 
-  /* Create local copy of cmd_data */
-  memcpy(ese_ctxt.p_cmd_data, pCmd->p_data, pCmd->len);
-  ese_ctxt.cmd_len = pCmd->len;
   uint8_t* CmdPart = pCmd->p_data;
 
   while (pCmdlen > ATP.ifsc) {
@@ -230,12 +227,13 @@ ESESTATUS StEse_close(void) {
  *
  * Description      This function get the last ATR received.
  *
- * Returns          pointer to the ATP array.
+ * Returns          pointer to the ATR array.
  *
  ******************************************************************************/
 uint8_t* StEse_getAtr(void) {
   STLOG_HAL_D("%s : Enter", __func__);
-  return Atp_getAtp();
+  // The ATR is not supported by SPI in the secure element
+  return nullptr;
 }
 
 /******************************************************************************

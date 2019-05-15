@@ -49,10 +49,6 @@ typedef enum {
 typedef struct ese_Context {
   SpiEse_status EseLibStatus; /* Indicate if Ese Lib is open or closed */
   void* pDevHandle;
-
-  uint8_t p_read_buff[260];
-  uint16_t cmd_len;
-  uint8_t p_cmd_data[260];
 } ese_Context_t;
 
 /**
@@ -115,7 +111,7 @@ bool StEseApi_isOpen();
  *
  * @param    void
  *
- * @return   pointer to the ATP array.
+ * @return   pointer to the ATR array.
  *
  */
 uint8_t* StEse_getAtr(void);
