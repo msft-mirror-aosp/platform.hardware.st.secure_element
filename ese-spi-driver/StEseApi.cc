@@ -31,7 +31,7 @@
 /* ESE Context structure */
 ese_Context_t ese_ctxt;
 
-const char* halVersion = "ST54-SE HAL1.0 Version 1.0.19";
+const char* halVersion = "ST54-SE HAL1.0 Version 1.0.20";
 
 pthread_mutex_t mutex;
 
@@ -75,8 +75,6 @@ ESESTATUS StEse_init() {
 
   memset(&ese_ctxt, 0x00, sizeof(ese_ctxt));
   memset(&tSpiDriver, 0x00, sizeof(tSpiDriver));
-
-  ALOGE("MW SEAccessKit Version");
 
   /* initialize trace level */
   StEseLog_InitializeLogLevel();

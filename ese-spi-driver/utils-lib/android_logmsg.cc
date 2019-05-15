@@ -48,7 +48,7 @@ unsigned char InitializeSTLogLevel() {
 
   num = 1;
   num = EseConfig::getUnsigned(NAME_STESE_HAL_LOGLEVEL, 0);
-  if (num != 0) hal_trace_level = (unsigned char)num;
+  if (num >= 0) hal_trace_level = (unsigned char)num;
 
   STLOG_HAL_D("%s: level=%u", __func__, hal_trace_level);
   return hal_trace_level;
