@@ -111,7 +111,7 @@ bool StEseApi_isOpen();
  *
  * @param    void
  *
- * @return   pointer to the ATP array.
+ * @return   pointer to the ATR array.
  *
  */
 uint8_t* StEse_getAtr(void);
