@@ -20,9 +20,7 @@ cc_library_shared {
         "utils-lib/DataMgmt.cc",
     ],
 
-    local_include_dirs: [
-        "utils-lib",
-    ],
+    export_include_dirs: ["utils-lib"],
     cflags: [
         "-DANDROID",
         "-DBUILDCFG=1",
