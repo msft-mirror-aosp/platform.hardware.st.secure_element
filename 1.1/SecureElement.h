@@ -16,10 +16,11 @@
  *
  *
  ******************************************************************************/
-#ifndef ANDROID_HARDWARE_SECURE_ELEMENT_V1_0_SECUREELEMENT_H
-#define ANDROID_HARDWARE_SECURE_ELEMENT_V1_0_SECUREELEMENT_H
+#ifndef ANDROID_HARDWARE_SECURE_ELEMENT_V1_1_SECUREELEMENT_H
+#define ANDROID_HARDWARE_SECURE_ELEMENT_V1_1_SECUREELEMENT_H
 
-#include <android/hardware/secure_element/1.0/ISecureElement.h>
+#include <android/hardware/secure_element/1.0/types.h>
+#include <android/hardware/secure_element/1.1/ISecureElement.h>
 #include <hidl/MQDescriptor.h>
 #include <hidl/Status.h>
 #include "../ese-spi-driver/StEseApi.h"
@@ -27,14 +28,18 @@
 namespace android {
 namespace hardware {
 namespace secure_element {
-namespace V1_0 {
+namespace V1_1 {
 namespace implementation {
 
 using ::android::sp;
 using ::android::hardware::hidl_vec;
 using ::android::hardware::Return;
 using ::android::hardware::Void;
-using ::android::hardware::secure_element::V1_0::ISecureElementHalCallback;
+
+using ::android::hardware::secure_element::V1_1::ISecureElement;
+
+using ::android::hardware::secure_element::V1_0::LogicalChannelResponse;
+using ::android::hardware::secure_element::V1_0::SecureElementStatus;
 using ::android::hidl::base::V1_0::IBase;
 
 #ifndef MAX_LOGICAL_CHANNELS
@@ -47,10 +52,13 @@ using ::android::hidl::base::V1_0::IBase;
 #define DEFAULT_BASIC_CHANNEL 0x00
 #endif
 
-struct SecureElement : public ISecureElement, public hidl_death_recipient {
+struct SecureElement : public V1_1::ISecureElement,
+                       public hidl_death_recipient {
   SecureElement();
   Return<void> init(
-      const sp<ISecureElementHalCallback>& clientCallback) override;
+      const sp<V1_0::ISecureElementHalCallback>& clientCallback) override;
+  Return<void> init_1_1(
+      const sp<ISecureElementHalCallback>& clientCallback) override;    
   Return<void> getAtr(getAtr_cb _hidl_cb) override;
   Return<bool> isCardPresent() override;
   Return<void> transmit(const hidl_vec<uint8_t>& data,
@@ -67,6 +75,7 @@ struct SecureElement : public ISecureElement, public hidl_death_recipient {
   uint8_t mOpenedchannelCount = 0;
   bool mOpenedChannels[MAX_LOGICAL_CHANNELS];
   static sp<V1_0::ISecureElementHalCallback> mCallbackV1_0;
+  static sp<V1_1::ISecureElementHalCallback> mCallbackV1_1;
   Return<::android::hardware::secure_element::V1_0::SecureElementStatus>
   seHalDeInit();
   ESESTATUS seHalInit();
@@ -75,9 +84,9 @@ struct SecureElement : public ISecureElement, public hidl_death_recipient {
 };
 
 }  // namespace implementation
-}  // namespace V1_0
+}  // namespace V1_1
 }  // namespace secure_element
 }  // namespace hardware
 }  // namespace android
 
-#endif  // ANDROID_HARDWARE_SECURE_ELEMENT_V1_0_SECUREELEMENT_H
+#endif  // ANDROID_HARDWARE_SECURE_ELEMENT_V1_1_SECUREELEMENT_H

@@ -16,8 +16,8 @@
  *
  *
  ******************************************************************************/
-#define LOG_TAG "ese@1.0-service.st"
-#include <android/hardware/secure_element/1.0/ISecureElement.h>
+#define LOG_TAG "ese@1.1-service.st"
+#include <android/hardware/secure_element/1.1/ISecureElement.h>
 #include <hidl/LegacySupport.h>
 #include <log/log.h>
 
@@ -29,11 +29,11 @@ using android::sp;
 using android::status_t;
 using android::hardware::configureRpcThreadpool;
 using android::hardware::joinRpcThreadpool;
-using android::hardware::secure_element::V1_0::ISecureElement;
-using android::hardware::secure_element::V1_0::implementation::SecureElement;
+using android::hardware::secure_element::V1_1::ISecureElement;
+using android::hardware::secure_element::V1_1::implementation::SecureElement;
 
 int main() {
-  ALOGD("Secure Element HAL Service 1.0 is starting.");
+  ALOGD("Secure Element HAL Service 1.1 is starting.");
   sp<ISecureElement> se_service = new SecureElement();
   configureRpcThreadpool(1, true /*callerWillJoin*/);
   status_t status = se_service->registerAsService("eSE1");
