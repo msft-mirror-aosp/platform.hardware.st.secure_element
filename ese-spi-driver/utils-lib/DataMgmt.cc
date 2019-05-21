@@ -83,6 +83,9 @@ int DataMgmt_GetData(uint16_t* data_len, uint8_t** pbuffer) {
 int DataMgmt_StoreDataInList(uint16_t data_len, uint8_t* pbuff) {
   TpduRecvBuff_List_t* newNode = NULL;
 
+  if (data_len > ATP.ifsc) {
+    return -1;
+  }
   newNode = (TpduRecvBuff_List_t*)malloc(sizeof(TpduRecvBuff_List_t));
   if (newNode == NULL) {
     return -1;
@@ -90,7 +93,12 @@ int DataMgmt_StoreDataInList(uint16_t data_len, uint8_t* pbuff) {
   newNode->pNext = NULL;
   newNode->tData.len = data_len;
   newNode->tData.data = (uint8_t*)malloc(ATP.ifsc * sizeof(uint8_t));
+  if (newNode->tData.data == NULL) {
+    free(newNode);
+    return -1;
+  }
   memcpy(newNode->tData.data, pbuff, data_len);
+
   total_len += data_len;
   if (head == NULL) {
     head = newNode;
@@ -119,6 +127,9 @@ static int DataMgmt_GetDataFromList(uint16_t* data_len, uint8_t* pbuff) {
 
   new_node = head;
   while (new_node != NULL) {
+    if (new_node->tData.len > ATP.ifsc) {
+      return -1;
+    }
     memcpy((pbuff + offset), new_node->tData.data, new_node->tData.len);
     offset += new_node->tData.len;
     new_node = new_node->pNext;

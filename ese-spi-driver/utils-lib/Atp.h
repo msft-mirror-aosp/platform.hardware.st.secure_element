@@ -24,7 +24,7 @@
 #include <string.h>
 //************************************ Defines *********************************
 
-#define ATP_MAX_ALLOWED_LENGTH 38
+#define ATP_MAX_ALLOWED_LENGTH 39
 
 #define EXPECTED_ATP_LENGTH 37
 
