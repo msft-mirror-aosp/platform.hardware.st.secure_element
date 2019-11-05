@@ -169,7 +169,7 @@ Return<void> SecureElement::openLogicalChannel(const hidl_vec<uint8_t>& aid,
     }
   }
 
-  SecureElementStatus sestatus = SecureElementStatus::IOERROR;
+  SecureElementStatus sestatus = SecureElementStatus::FAILED;
   ESESTATUS status = ESESTATUS_FAILED;
   StEse_data cmdApdu;
   StEse_data rspApdu;
@@ -223,7 +223,7 @@ Return<void> SecureElement::openLogicalChannel(const hidl_vec<uint8_t>& aid,
 
   STLOG_HAL_D("%s: Sending selectApdu", __func__);
   /*Reset variables if manageChannel is success*/
-  sestatus = SecureElementStatus::IOERROR;
+  sestatus = SecureElementStatus::FAILED;
   status = ESESTATUS_FAILED;
 
   memset(&cmdApdu, 0x00, sizeof(StEse_data));
@@ -307,7 +307,7 @@ Return<void> SecureElement::openBasicChannel(const hidl_vec<uint8_t>& aid,
     }
   }
 
-  SecureElementStatus sestatus = SecureElementStatus::IOERROR;
+  SecureElementStatus sestatus = SecureElementStatus::FAILED;
   ESESTATUS status = ESESTATUS_FAILED;
   StEse_data cmdApdu;
   StEse_data rspApdu;
