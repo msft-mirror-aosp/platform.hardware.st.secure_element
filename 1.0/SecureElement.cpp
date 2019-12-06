@@ -17,11 +17,17 @@
  *
  ******************************************************************************/
 #define LOG_TAG "StEse-SecureElement"
+#include "SecureElement.h"
 #include <android_logmsg.h>
-
+#include <dlfcn.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "SecureElement.h"
+
+typedef int (*STAram_init)(void);
+typedef int (*StAram_Transceive)(StEse_data*, StEse_data*);
+static StAram_Transceive Aram_transceive = nullptr;
+static int aram_channel = 0;
 
 extern bool ese_debug_enabled;
 static bool OpenLogicalChannelProcessing = false;
@@ -43,6 +49,7 @@ Return<void> SecureElement::init(
         ::android::hardware::secure_element::V1_0::ISecureElementHalCallback>&
         clientCallback) {
   ESESTATUS status = ESESTATUS_SUCCESS;
+  aram_channel = 0;
   STLOG_HAL_D("%s: Enter", __func__);
   if (clientCallback == nullptr) {
     return Void();
@@ -56,6 +63,21 @@ Return<void> SecureElement::init(
   if (isSeInitialized()) {
     clientCallback->onStateChange(true);
     return Void();
+  }
+
+  // Ignore this dlopen if you don't have libstpreprocess.so
+  void* stdll = dlopen("/vendor/lib64/libstpreprocess.so", RTLD_NOW);
+  if (stdll) {
+    STAram_init fn_init = (STAram_init)dlsym(stdll, "STAram_init");
+    if (fn_init) {
+      if (ESESTATUS_SUCCESS == fn_init()) {
+        STLOG_HAL_D("%s: Enter", __func__);
+        Aram_transceive = (StAram_Transceive)dlsym(stdll, "StAram_Transceive");
+      } else {
+        Aram_transceive = nullptr;
+        STLOG_HAL_E("%s: Error in loading StAram_Transceive", __func__);
+      }
+    }
   }
 
   status = seHalInit();
@@ -99,7 +121,14 @@ Return<void> SecureElement::transmit(const hidl_vec<uint8_t>& data,
   if (cmdApdu.len >= MIN_APDU_LENGTH) {
     cmdApdu.p_data = (uint8_t*)malloc(data.size() * sizeof(uint8_t));
     memcpy(cmdApdu.p_data, data.data(), cmdApdu.len);
-    status = StEse_Transceive(&cmdApdu, &rspApdu);
+    /* Check aram_channel number after open logic channel */
+    if (aram_channel && (0x03 & cmdApdu.p_data[0]) == aram_channel &&
+        Aram_transceive) {
+      /* Replace responses for ARAM operations*/
+      status = (ESESTATUS)Aram_transceive(&cmdApdu, &rspApdu);
+    } else {
+      status = StEse_Transceive(&cmdApdu, &rspApdu);
+    }
   }
 
   hidl_vec<uint8_t> result;
@@ -120,6 +149,8 @@ Return<void> SecureElement::openLogicalChannel(const hidl_vec<uint8_t>& aid,
                                                uint8_t p2,
                                                openLogicalChannel_cb _hidl_cb) {
   hidl_vec<uint8_t> manageChannelCommand = {0x00, 0x70, 0x00, 0x00, 0x01};
+  hidl_vec<uint8_t> ARA_M_AID = {0xA0, 0x00, 0x00, 0x01, 0x51,
+                                 0x41, 0x43, 0x4C, 0x00};
   OpenLogicalChannelProcessing = true;
   LogicalChannelResponse resApduBuff;
   resApduBuff.channelNumber = 0xff;
@@ -162,6 +193,13 @@ Return<void> SecureElement::openLogicalChannel(const hidl_vec<uint8_t>& aid,
     mOpenedchannelCount++;
     mOpenedChannels[resApduBuff.channelNumber] = true;
     sestatus = SecureElementStatus::SUCCESS;
+    if (ARA_M_AID == aid) {
+      STLOG_HAL_D("%s: ARAM AID match", __func__);
+      aram_channel = resApduBuff.channelNumber;
+    } else {
+      /* Clear aram_channel number */
+      if (aram_channel == resApduBuff.channelNumber) aram_channel = 0;
+    }
   } else if (rspApdu.p_data[rspApdu.len - 2] == 0x6A &&
              rspApdu.p_data[rspApdu.len - 1] == 0x81) {
     sestatus = SecureElementStatus::CHANNEL_NOT_AVAILABLE;
@@ -208,7 +246,12 @@ Return<void> SecureElement::openLogicalChannel(const hidl_vec<uint8_t>& aid,
     cmdApdu.p_data[xx++] = aid.size();  // Lc
     memcpy(&cmdApdu.p_data[xx], aid.data(), aid.size());
     cmdApdu.p_data[xx + aid.size()] = 0x00;  // Le
-    status = StEse_Transceive(&cmdApdu, &rspApdu);
+
+    if (Aram_transceive && (aram_channel == resApduBuff.channelNumber)) {
+      status = (ESESTATUS)Aram_transceive(&cmdApdu, &rspApdu);
+    } else {
+      status = StEse_Transceive(&cmdApdu, &rspApdu);
+    }
   }
 
   if (status != ESESTATUS_SUCCESS) {
@@ -363,6 +406,9 @@ SecureElement::closeChannel(uint8_t channelNumber) {
     STLOG_HAL_E("%s: invalid channel!!!", __func__);
     sestatus = SecureElementStatus::FAILED;
   } else if (channelNumber > DEFAULT_BASIC_CHANNEL) {
+    /* Reset aram_channel to 0 */
+    if (channelNumber == aram_channel) aram_channel = 0;
+
     memset(&cmdApdu, 0x00, sizeof(StEse_data));
     memset(&rspApdu, 0x00, sizeof(StEse_data));
     cmdApdu.p_data = (uint8_t*)malloc(5 * sizeof(uint8_t));
@@ -409,6 +455,8 @@ SecureElement::closeChannel(uint8_t channelNumber) {
 
 void SecureElement::serviceDied(uint64_t /*cookie*/, const wp<IBase>& /*who*/) {
   STLOG_HAL_E("%s: SecureElement serviceDied!!!", __func__);
+  /* Reset aram_channel to 0 */
+  aram_channel = 0;
   SecureElementStatus sestatus = seHalDeInit();
   if (sestatus != SecureElementStatus::SUCCESS) {
     STLOG_HAL_E("%s: seHalDeInit Faliled!!!", __func__);
@@ -424,6 +472,7 @@ ESESTATUS SecureElement::seHalInit() {
   ESESTATUS status = ESESTATUS_SUCCESS;
 
   STLOG_HAL_D("%s: Enter", __func__);
+  aram_channel = 0;
   status = StEse_init();
   if (status != ESESTATUS_SUCCESS) {
     STLOG_HAL_E("%s: SecureElement open failed!!!", __func__);
