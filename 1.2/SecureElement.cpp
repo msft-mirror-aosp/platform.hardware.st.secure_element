@@ -30,9 +30,10 @@ static bool OpenBasicChannelProcessing = false;
 namespace android {
 namespace hardware {
 namespace secure_element {
-namespace V1_0 {
+namespace V1_2 {
 namespace implementation {
 
+sp<V1_1::ISecureElementHalCallback> SecureElement::mCallbackV1_1 = nullptr;
 sp<V1_0::ISecureElementHalCallback> SecureElement::mCallbackV1_0 = nullptr;
 
 SecureElement::SecureElement()
@@ -48,6 +49,7 @@ Return<void> SecureElement::init(
     return Void();
   } else {
     mCallbackV1_0 = clientCallback;
+    mCallbackV1_1 = nullptr;
     if (!mCallbackV1_0->linkToDeath(this, 0 /*cookie*/)) {
       STLOG_HAL_E("%s: Failed to register death notification", __func__);
     }
@@ -64,6 +66,36 @@ Return<void> SecureElement::init(
     return Void();
   } else {
     clientCallback->onStateChange(true);
+    return Void();
+  }
+}
+Return<void> SecureElement::init_1_1(
+    const sp<
+        ::android::hardware::secure_element::V1_1::ISecureElementHalCallback>&
+        clientCallback) {
+  ESESTATUS status = ESESTATUS_SUCCESS;
+  STLOG_HAL_D("%s: Enter", __func__);
+  if (clientCallback == nullptr) {
+    return Void();
+  } else {
+    mCallbackV1_1 = clientCallback;
+    mCallbackV1_0 = nullptr;
+    if (!mCallbackV1_1->linkToDeath(this, 0 /*cookie*/)) {
+      STLOG_HAL_E("%s: Failed to register death notification", __func__);
+    }
+  }
+
+  if (isSeInitialized()) {
+    clientCallback->onStateChange_1_1(true, "SE already initialized");
+    return Void();
+  }
+
+  status = seHalInit();
+  if (status != ESESTATUS_SUCCESS) {
+    clientCallback->onStateChange_1_1(false, "SE initialization failed");
+    return Void();
+  } else {
+    clientCallback->onStateChange_1_1(true, "SE initialized");
     return Void();
   }
 }
@@ -137,7 +169,7 @@ Return<void> SecureElement::openLogicalChannel(const hidl_vec<uint8_t>& aid,
     }
   }
 
-  SecureElementStatus sestatus = SecureElementStatus::FAILED;
+  SecureElementStatus sestatus = SecureElementStatus::IOERROR;
   ESESTATUS status = ESESTATUS_FAILED;
   StEse_data cmdApdu;
   StEse_data rspApdu;
@@ -191,7 +223,7 @@ Return<void> SecureElement::openLogicalChannel(const hidl_vec<uint8_t>& aid,
 
   STLOG_HAL_D("%s: Sending selectApdu", __func__);
   /*Reset variables if manageChannel is success*/
-  sestatus = SecureElementStatus::FAILED;
+  sestatus = SecureElementStatus::IOERROR;
   status = ESESTATUS_FAILED;
 
   memset(&cmdApdu, 0x00, sizeof(StEse_data));
@@ -275,7 +307,7 @@ Return<void> SecureElement::openBasicChannel(const hidl_vec<uint8_t>& aid,
     }
   }
 
-  SecureElementStatus sestatus = SecureElementStatus::FAILED;
+  SecureElementStatus sestatus = SecureElementStatus::IOERROR;
   ESESTATUS status = ESESTATUS_FAILED;
   StEse_data cmdApdu;
   StEse_data rspApdu;
@@ -392,6 +424,8 @@ SecureElement::closeChannel(uint8_t channelNumber) {
 
   if ((channelNumber == DEFAULT_BASIC_CHANNEL) ||
       (sestatus == SecureElementStatus::SUCCESS)) {
+    STLOG_HAL_D("%s: Closing channel : %d is successful ", __func__,
+                channelNumber);
     mOpenedChannels[channelNumber] = false;
     mOpenedchannelCount--;
     /*If there are no channels remaining close secureElement*/
@@ -411,10 +445,11 @@ void SecureElement::serviceDied(uint64_t /*cookie*/, const wp<IBase>& /*who*/) {
   STLOG_HAL_E("%s: SecureElement serviceDied!!!", __func__);
   SecureElementStatus sestatus = seHalDeInit();
   if (sestatus != SecureElementStatus::SUCCESS) {
-    STLOG_HAL_E("%s: seHalDeInit Faliled!!!", __func__);
+    STLOG_HAL_E("%s: seHalDeInit Failed!!!", __func__);
   }
-  if (mCallbackV1_0 != nullptr) {
-    mCallbackV1_0->unlinkToDeath(this);
+  if (mCallbackV1_1 != nullptr) {
+    mCallbackV1_1->unlinkToDeath(this);
+    mCallbackV1_1 = nullptr;
   }
 }
 
@@ -444,7 +479,7 @@ void SecureElement::seHalResetSe() {
   }
 
   if (status == ESESTATUS_SUCCESS) {
-    mCallbackV1_0->onStateChange(false);
+    mCallbackV1_1->onStateChange_1_1(false, "reset the SE");
 
     status = StEse_Reset();
     if (status != ESESTATUS_SUCCESS) {
@@ -454,7 +489,7 @@ void SecureElement::seHalResetSe() {
         mOpenedChannels[xx] = false;
       }
       mOpenedchannelCount = 0;
-      mCallbackV1_0->onStateChange(true);
+      mCallbackV1_1->onStateChange_1_1(true, "SE initialized");
     }
   }
   STLOG_HAL_V("%s: Exit", __func__);
@@ -480,8 +515,41 @@ SecureElement::seHalDeInit() {
   return sestatus;
 }
 
+Return<::android::hardware::secure_element::V1_0::SecureElementStatus>
+SecureElement::reset() {
+  ESESTATUS status = ESESTATUS_SUCCESS;
+  SecureElementStatus sestatus = SecureElementStatus::FAILED;
+
+  STLOG_HAL_D("%s: Enter", __func__);
+  if (!isSeInitialized()) {
+    ESESTATUS status = seHalInit();
+    if (status != ESESTATUS_SUCCESS) {
+      STLOG_HAL_E("%s: seHalInit Failed!!!", __func__);
+    }
+  }
+
+  if (status == ESESTATUS_SUCCESS) {
+    mCallbackV1_1->onStateChange_1_1(false, "reset the SE");
+
+    status = StEse_Reset();
+    if (status != ESESTATUS_SUCCESS) {
+      STLOG_HAL_E("%s: SecureElement reset failed!!", __func__);
+    } else {
+      sestatus = SecureElementStatus::SUCCESS;
+      for (uint8_t xx = 0; xx < MAX_LOGICAL_CHANNELS; xx++) {
+        mOpenedChannels[xx] = false;
+      }
+      mOpenedchannelCount = 0;
+      mCallbackV1_1->onStateChange_1_1(true, "SE initialized");
+    }
+  }
+  STLOG_HAL_V("%s: Exit", __func__);
+
+  return sestatus;
+}
+
 }  // namespace implementation
-}  // namespace V1_0
+}  // namespace V1_2
 }  // namespace secure_element
 }  // namespace hardware
 }  // namespace android

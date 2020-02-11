@@ -13,10 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 cc_binary {
-    name: "android.hardware.secure_element@1.1-service.st",
+    name: "android.hardware.secure_element@1.2-service.st",
     defaults: ["hidl_defaults"],
-    proprietary: true,  
-    init_rc: ["android.hardware.secure_element@1.1-service.st.rc"],
+    proprietary: true,
+    init_rc: ["android.hardware.secure_element@1.2-service.st.rc"],
     relative_install_path: "hw",
     srcs: [
         "StEseService.cpp",
@@ -26,6 +26,7 @@ cc_binary {
     shared_libs: [
         "android.hardware.secure_element@1.0",
         "android.hardware.secure_element@1.1",
+        "android.hardware.secure_element@1.2",
         "ese_spi_st",
         "libbase",
         "libcutils",

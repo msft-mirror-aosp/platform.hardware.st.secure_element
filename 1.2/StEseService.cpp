@@ -16,14 +16,12 @@
  *
  *
  ******************************************************************************/
-#define LOG_TAG "ese@1.0-service.st"
-#include <android/hardware/secure_element/1.0/ISecureElement.h>
-#include <dlfcn.h>
+#define LOG_TAG "ese@1.2-service.st"
+#include <android/hardware/secure_element/1.2/ISecureElement.h>
 #include <hidl/LegacySupport.h>
 #include <log/log.h>
 
 #include "SecureElement.h"
-typedef int (*STEsePreProcess)(void);
 
 // Generated HIDL files
 using android::OK;
@@ -31,20 +29,11 @@ using android::sp;
 using android::status_t;
 using android::hardware::configureRpcThreadpool;
 using android::hardware::joinRpcThreadpool;
-using android::hardware::secure_element::V1_0::ISecureElement;
-using android::hardware::secure_element::V1_0::implementation::SecureElement;
+using android::hardware::secure_element::V1_2::ISecureElement;
+using android::hardware::secure_element::V1_2::implementation::SecureElement;
 
 int main() {
-  ALOGD("Secure Element HAL Service 1.0 is starting.");
-
-  // Ignore this dlopen it doesn't needed.
-  void* stdll = dlopen("/vendor/lib64/libstpreprocess.so", RTLD_NOW);
-  if (stdll) {
-    STEsePreProcess fn = (STEsePreProcess)dlsym(stdll, "pre_process");
-    if (fn) {
-      ALOGD("Result=%d", fn());
-    }
-  }
+  ALOGD("Secure Element HAL Service 1.2 is starting.");
   sp<ISecureElement> se_service = new SecureElement();
   configureRpcThreadpool(1, true /*callerWillJoin*/);
   status_t status = se_service->registerAsService("eSE1");
