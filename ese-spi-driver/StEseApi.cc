@@ -87,6 +87,9 @@ ESESTATUS StEse_init() {
   /* Initialize SPI Driver layer */
   if (T1protocol_init(&tSpiDriver) != ESESTATUS_SUCCESS) {
     STLOG_HAL_E("T1protocol_init Failed");
+    if (intptr_t(tSpiDriver.pDevHandle) > 0) {
+      ese_ctxt.pDevHandle = tSpiDriver.pDevHandle;
+    }
     goto clean_and_return;
   }
   /* Copying device handle to ESE Lib context*/
