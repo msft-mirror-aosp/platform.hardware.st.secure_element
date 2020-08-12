@@ -18,11 +18,11 @@
  ******************************************************************************/
 #define LOG_TAG "StEse_HalApi"
 
-#include <pthread.h>
 #include "StEseApi.h"
-#include "SpiLayerComm.h"
 #include <cutils/properties.h>
 #include <ese_config.h>
+#include <pthread.h>
+#include "SpiLayerComm.h"
 #include "T1protocol.h"
 #include "android_logmsg.h"
 
@@ -31,9 +31,13 @@
 /* ESE Context structure */
 ese_Context_t ese_ctxt;
 
-const char* halVersion = "ST54-SE HAL1.0 Version 1.0.21";
+const char* halVersion = "ST54-SE HAL1.0 Version 1.0.22";
 
 pthread_mutex_t mutex;
+
+bool ConfRead = 0;
+unsigned int PollInt_confvalue = 1000;
+unsigned int BGT_confvalue = 1000;
 
 /******************************************************************************
  * Function         StEseLog_InitializeLogLevel
@@ -83,6 +87,16 @@ ESESTATUS StEse_init() {
   ese_node = EseConfig::getString(NAME_ST_ESE_DEV_NODE, "/dev/st54j");
   strcpy(ese_dev_node, ese_node.c_str());
   tSpiDriver.pDevName = ese_dev_node;
+
+  if (!ConfRead) {
+    PollInt_confvalue =
+        EseConfig::getUnsigned(NAME_ST_ESE_DEV_POLLING_INTERVAL, 1000);
+    BGT_confvalue = EseConfig::getUnsigned(NAME_ST_ESE_DEV_BGT, 1000);
+    ConfRead = true;
+  }
+
+  tSpiDriver.polling_interval = PollInt_confvalue;
+  tSpiDriver.bgt = BGT_confvalue;
 
   /* Initialize SPI Driver layer */
   if (T1protocol_init(&tSpiDriver) != ESESTATUS_SUCCESS) {
