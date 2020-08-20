@@ -576,9 +576,9 @@ int T1protocol_formSblockResponse(Tpdu* responseTpdu, Tpdu* requestTpdu) {
 ** Returns          0 If all went is ok, -1 otherwise.
 **
 *******************************************************************************/
-int T1protocol_processSBlock(__attribute((unused)) Tpdu* originalCmdTpdu,
-                             __attribute((unused)) Tpdu* lastCmdTpduSent,
+int T1protocol_processSBlock(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
                              Tpdu* lastRespTpduReceived) {
+  int rc;
   if (lastRespTpduReceived->pcb == (uint8_t)SBLOCK_WTX_REQUEST_MASK) {
     gNextCmd = S_WTX_RES;
   } else if (lastRespTpduReceived->pcb == (uint8_t)SBLOCK_IFS_REQUEST_MASK) {
@@ -593,9 +593,20 @@ int T1protocol_processSBlock(__attribute((unused)) Tpdu* originalCmdTpdu,
   } else if (lastRespTpduReceived->pcb ==
              (uint8_t)SBLOCK_RESYNCH_RESPONSE_MASK) {
     T1protocol_resetSequenceNumbers();
+    // Reset the sequence number of the original Tpdu if needed
+    if ((originalCmdTpdu->pcb & IBLOCK_NS_BIT_MASK) > 0) {
+      originalCmdTpdu->pcb &= ~IBLOCK_NS_BIT_MASK;
 
-    STLOG_HAL_E("RESYNCH response - resend the whole frame");
-    return -2;
+      rc = Tpdu_formTpdu(originalCmdTpdu->nad, originalCmdTpdu->pcb,
+                         originalCmdTpdu->len, originalCmdTpdu->data,
+                         originalCmdTpdu);
+      if (rc < 0) {
+        return rc;
+      }
+    }
+
+    Tpdu_copy(lastCmdTpduSent, originalCmdTpdu);
+    gNextCmd = I_block;
 
   } else if (lastRespTpduReceived->pcb == (uint8_t)SBLOCK_ABORT_REQUEST_MASK) {
     // TODO
@@ -694,8 +705,8 @@ void T1protocol_updateRecoveryStatus() {
       break;
 
     case RECOVERY_STATUS_RESEND_1:
-      STLOG_HAL_D("recoveryStatus: RESEND 1 -> RESYNC 1");
-      recoveryStatus = RECOVERY_STATUS_RESYNC_1;
+        STLOG_HAL_D("recoveryStatus: RESEND 1 -> RESYNC 1");
+        recoveryStatus = RECOVERY_STATUS_RESYNC_1;
       break;
 
     case RECOVERY_STATUS_RESYNC_1:

@@ -51,9 +51,6 @@ int SpiLayerInterface_init(SpiDriver_config_t* tSpiDriver) {
   // Configure the SPI before start the data exchange with the eSE
   char* spiDevPath = tSpiDriver->pDevName;
 
-  SpiLayerComm_init(tSpiDriver);
-  SpiLayerDriver_init(tSpiDriver);
-
   int DevHandle = SpiLayerDriver_open(spiDevPath);
   tSpiDriver->pDevHandle = (void*)((intptr_t)DevHandle);
   if (DevHandle == -1) {

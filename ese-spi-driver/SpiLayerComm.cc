@@ -35,21 +35,6 @@ int pollInterval;
 
 /*******************************************************************************
 **
-** Function         SpiLayerComm_init
-**
-** Description      Initialize
-**
-** Parameters       spiDevPath - Spi device path.
-**
-** Returns          null
-**
-*******************************************************************************/
-void SpiLayerComm_init(SpiDriver_config_t* tSpiDriver) {
-  pollInterval = tSpiDriver->polling_interval;
-  STLOG_HAL_D("SpiLayerDriver_init  pollInterval=  %d us", pollInterval);
-}
-/*******************************************************************************
-**
 ** Function         SpiLayerComm_waitForAtpLength
 **
 ** Description      Starts the polling mechanism to read the length of the ATP.
@@ -251,8 +236,7 @@ int SpiLayerComm_waitForResponse(Tpdu* respTpdu, int nBwt) {
   // Start the polling mechanism
   while (true) {
     // Wait between each polling sequence
-    usleep(pollInterval);
-
+    usleep(1000);
     // Read the slave response by sending three null bytes
     if (SpiLayerDriver_read(&pollingRxByte, 1) != 1) {
       STLOG_HAL_E("Error reading a valid NAD from the slave.");
@@ -284,6 +268,7 @@ int SpiLayerComm_waitForResponse(Tpdu* respTpdu, int nBwt) {
   if (SpiLayerDriver_read(buffer, 2) != 2) {
     return -1;
   }
+
   // Save the prologue read into the tpduRx
   respTpdu->nad = pollingRxByte;
   respTpdu->pcb = buffer[0];
