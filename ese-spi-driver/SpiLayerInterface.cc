@@ -166,11 +166,19 @@ int SpiLayerInterface_setup() {
     return -1;
   }
   T1protocol_resetSequenceNumbers();
-  // Negotiate IFS value
-  if (T1protocol_doRequestIFS() != 0) {
+
+  uint8_t* pRsp = (uint8_t*)malloc(ATP.ifsc * sizeof(uint8_t));
+  int rc =
+      T1protocol_transcieveApduPart(0, 0, false, (StEse_data*)pRsp, S_IFS_REQ);
+
+  if (rc < 0) {
+    STLOG_HAL_E(" %s ESE - Error transmitting IFS request\n", __FUNCTION__);
+    free(pRsp);
     return -1;
   }
   // Set noneed if SPI worked normally.
   property_set(ese_reset_property, "noneed");
+
+  free(pRsp);
   return 0;
 }
