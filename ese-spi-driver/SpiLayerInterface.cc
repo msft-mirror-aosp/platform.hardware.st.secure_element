@@ -156,10 +156,13 @@ void SpiLayerInterface_close(void* pDevHandle) {
 **
 *******************************************************************************/
 int SpiLayerInterface_setup() {
+  const char ese_reset_property[] = "persist.vendor.se.reset";
   // First of all, read the ATP from the slave
   if (SpiLayerComm_readAtp() != 0) {
     // Error reading the ATP
     STLOG_HAL_E("Error reading the ATP.");
+    // eSE needs cold reset.
+    property_set(ese_reset_property, "needed");
     return -1;
   }
   T1protocol_resetSequenceNumbers();
@@ -167,5 +170,7 @@ int SpiLayerInterface_setup() {
   if (T1protocol_doRequestIFS() != 0) {
     return -1;
   }
+  // Set noneed if SPI worked normally.
+  property_set(ese_reset_property, "noneed");
   return 0;
 }
