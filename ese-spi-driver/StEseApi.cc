@@ -175,7 +175,7 @@ retry:
     pTxBlock_len = ATP.ifsc;
 
     int rc = T1protocol_transcieveApduPart(CmdPart, pTxBlock_len, false,
-                                           (StEse_data*)pRsp);
+                                           (StEse_data*)pRsp, I_block);
 
     if ((rc == -2) && (retry_count < 3)) {
       retry_count++;
@@ -199,8 +199,8 @@ retry:
     CmdPart = CmdPart + pTxBlock_len;
   }
 
-  int rc =
-      T1protocol_transcieveApduPart(CmdPart, pCmdlen, true, (StEse_data*)pRsp);
+  int rc = T1protocol_transcieveApduPart(CmdPart, pCmdlen, true,
+                                         (StEse_data*)pRsp, I_block);
   if ((rc == -2) && (retry_count < 3)) {
     retry_count++;
     STLOG_HAL_E(" %s ESE - resync was needed, resend\n", __FUNCTION__);
