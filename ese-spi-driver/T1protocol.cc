@@ -477,7 +477,7 @@ void T1protocol_processRBlock(Tpdu* originalCmdTpdu,
     // retransmission of the original IBlock, otherwise do resend request.
     if (T1protocol_isSequenceNumberOk(originalCmdTpdu, lastRespTpduReceived) ==
         true) {
-      STLOG_HAL_D("%s : Need retransmissiom :", __func__);
+      STLOG_HAL_E("%s : Need retransmissiom :", __func__);
       if (gOriginalCmd == S_IFS_REQ) {
         gNextCmd = S_IFS_REQ;
       } else {
@@ -695,22 +695,22 @@ bool T1protocol_isSequenceNumberOk(Tpdu* originalTpdu, Tpdu* respTpdu) {
 void T1protocol_updateRecoveryStatus() {
   switch (recoveryStatus) {
     case RECOVERY_STATUS_OK:
-      STLOG_HAL_D("recoveryStatus: OK -> RESEND 1");
+      STLOG_HAL_E("recoveryStatus: OK -> RESEND 1");
       recoveryStatus = RECOVERY_STATUS_RESEND_1;
       break;
 
     case RECOVERY_STATUS_RESEND_1:
-      STLOG_HAL_D("recoveryStatus: RESEND 1 -> RESYNC 1");
+      STLOG_HAL_E("recoveryStatus: RESEND 1 -> RESYNC 1");
       recoveryStatus = RECOVERY_STATUS_RESYNC_1;
       break;
 
     case RECOVERY_STATUS_RESYNC_1:
-      STLOG_HAL_D("recoveryStatus: RESYNC 1 -> WARM RESET");
+      STLOG_HAL_E("recoveryStatus: RESYNC 1 -> WARM RESET");
       recoveryStatus = RECOVERY_STATUS_WARM_RESET;
       break;
 
     case RECOVERY_STATUS_WARM_RESET:
-      STLOG_HAL_D("recoveryStatus: WARM_RESET (recovery completed)");
+      STLOG_HAL_E("recoveryStatus: WARM_RESET (recovery completed)");
       recoveryStatus = RECOVERY_STATUS_KO;
       break;
   }
@@ -969,7 +969,7 @@ int T1protocol_handleTpduResponse(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
   // If the last transmission ends without response from the slave, do
   // recovery mechanism.
   if (*bytesRead == 0) {
-    STLOG_HAL_D("bytesRead = 0 -> Going into recovery.");
+    STLOG_HAL_E("bytesRead = 0 -> Going into recovery.");
     rc = T1protocol_doRecovery();
     return rc;
   }
@@ -977,7 +977,7 @@ int T1protocol_handleTpduResponse(Tpdu* originalCmdTpdu, Tpdu* lastCmdTpduSent,
   // Check the consistency of the last received tpdu
   rc = T1protocol_checkTpduConsistency(lastCmdTpduSent, lastRespTpduReceived);
   if (rc < 0) {
-    STLOG_HAL_D("%s : TPDU consistency check failed -> Going into recovery.",
+    STLOG_HAL_E("%s : TPDU consistency check failed -> Going into recovery.",
                 __func__);
     rc = T1protocol_doRecovery();
     return rc;
@@ -1135,7 +1135,7 @@ int T1protocol_transcieveApduPart(uint8_t* cmdApduPart, uint8_t cmdLength,
   StEse_data pRes;
 
   memset(&pRes, 0x00, sizeof(StEse_data));
-  STLOG_HAL_D("%s : Enter", __func__);
+  STLOG_HAL_E("%s : Enter cmdLength = 0x%02X", __func__, cmdLength);
 
   // Form the cmdTpdu according to the cmdApduPart, cmdLength and isLast
   // fields.

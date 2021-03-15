@@ -182,8 +182,8 @@ retry:
 
     if ((rc == -2) && (retry_count < 3)) {
       retry_count++;
-      STLOG_HAL_E(" %s ESE - resync was needed, resend the whole frame\n",
-                  __FUNCTION__);
+      STLOG_HAL_E(" %s ESE - resync was needed, resend the whole frame retry"
+                  " = %d\n", __FUNCTION__, retry_count);
       pCmdlen = pCmd->len;
       CmdPart = pCmd->p_data;
       goto retry;
@@ -206,7 +206,8 @@ retry:
                                          (StEse_data*)pRsp, I_block);
   if ((rc == -2) && (retry_count < 3)) {
     retry_count++;
-    STLOG_HAL_E(" %s ESE - resync was needed, resend\n", __FUNCTION__);
+    STLOG_HAL_E(" %s ESE - resync was needed, resend retry = %d\n",
+                __FUNCTION__, retry_count);
     pCmdlen = pCmd->len;
     CmdPart = pCmd->p_data;
     goto retry;
