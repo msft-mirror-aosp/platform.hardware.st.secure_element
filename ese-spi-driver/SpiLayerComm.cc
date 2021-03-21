@@ -271,7 +271,7 @@ int SpiLayerComm_waitForResponse(Tpdu* respTpdu, int nBwt) {
       unsigned int elapsedTimeInMs =
           Utils_getElapsedTimeInMs(startTime, currentTime);
       if (elapsedTimeInMs > maxWaitingTime) {
-        STLOG_HAL_D("BWT timed out after %d ms before receiving a valid NAD",
+        STLOG_HAL_E("BWT timed out after %d ms before receiving a valid NAD",
                     elapsedTimeInMs);
         return -2;
       }
