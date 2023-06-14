@@ -44,8 +44,4 @@ cc_binary {
         "liblog",
         "libutils",
     ],
-
-    sanitize: {
-        memtag_heap: true,
-    },
 }
