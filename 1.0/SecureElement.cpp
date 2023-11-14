@@ -66,7 +66,11 @@ Return<void> SecureElement::init(
   }
 
   // Ignore this dlopen if you don't have libstpreprocess.so
+#if defined(ST_LIB_32)
+  void* stdll = dlopen("/vendor/lib/libstpreprocess.so", RTLD_NOW);
+#else
   void* stdll = dlopen("/vendor/lib64/libstpreprocess.so", RTLD_NOW);
+#endif
   if (stdll) {
     STAram_init fn_init = (STAram_init)dlsym(stdll, "STAram_init");
     if (fn_init) {

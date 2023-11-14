@@ -24,7 +24,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(ST_LIB_32)
+#define VENDOR_LIB_PATH "/vendor/lib/"
+#else
 #define VENDOR_LIB_PATH "/vendor/lib64/"
+#endif
 #define VENDOR_LIB_EXT ".so"
 typedef int (*STEseReset)(void);
 
