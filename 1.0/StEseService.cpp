@@ -38,7 +38,11 @@ int main() {
   ALOGD("Secure Element HAL Service 1.0 is starting.");
 
   // Ignore this dlopen it doesn't needed.
+#if defined(ST_LIB_32)
+  void* stdll = dlopen("/vendor/lib/libstpreprocess.so", RTLD_NOW);
+#else
   void* stdll = dlopen("/vendor/lib64/libstpreprocess.so", RTLD_NOW);
+#endif
   if (stdll) {
     STEsePreProcess fn = (STEsePreProcess)dlsym(stdll, "pre_process");
     if (fn) {
