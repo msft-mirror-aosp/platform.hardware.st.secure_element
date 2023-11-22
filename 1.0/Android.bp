@@ -28,4 +28,8 @@ cc_binary {
         "liblog",
         "libutils",
     ],
+
+    arch: {
+        arm: { cflags: ["-DST_LIB_32"] },
+    }
 }
